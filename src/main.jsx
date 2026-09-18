@@ -109,7 +109,7 @@ const nav = [
   ['finance', 'Финансы', CircleDollarSign],
 ];
 
-function LocalApp() {
+function LocalApp({ initialTaxRate = null }) {
   const [students, setStudents] = usePersistentState('tm_students', seed.students, false);
   const [lessons, setLessons] = usePersistentState('tm_lessons', seed.lessons, false);
   const [homework, setHomework] = usePersistentState('tm_homework', seed.homework, false);
@@ -251,16 +251,21 @@ function LocalApp() {
   function updateHomework(id, patch) {
     const existing = homework.find(h => String(h.id) === String(id));
     const lessonId = existing?.lessonId || (String(id).startsWith('lesson-') ? String(id).slice(7) : null);
+    const deletedPaths = Array.isArray(patch?._deletedAttachmentPaths) ? patch._deletedAttachmentPaths : [];
+    const { _deletedAttachmentPaths, ...cleanPatch } = patch || {};
+    if (deletedPaths.length && typeof window !== 'undefined' && window.__tmMarkHomeworkFileDeleted) {
+      deletedPaths.filter(Boolean).forEach(path => window.__tmMarkHomeworkFileDeleted(path));
+    }
     if (existing) {
-      setHomework(prev => prev.map(h => String(h.id) === String(id) ? { ...h, ...patch } : h));
+      setHomework(prev => prev.map(h => String(h.id) === String(id) ? { ...h, ...cleanPatch } : h));
     } else if (lessonId) {
       const lesson = lessons.find(l => String(l.id) === String(lessonId));
       if (lesson) {
-        setHomework(prev => [...prev, { id: crypto.randomUUID(), lessonId: lesson.id, studentId: patch.studentId ?? lesson.studentId, subject: patch.subject ?? lesson.subject, text: patch.text ?? lesson.homework ?? '', due: patch.due ?? lesson.homeworkDue ?? '', status: patch.status ?? 'pending', attachments: patch.attachments ?? lesson.homeworkAttachments ?? [] }]);
+        setHomework(prev => [...prev, { id: crypto.randomUUID(), lessonId: lesson.id, studentId: cleanPatch.studentId ?? lesson.studentId, subject: cleanPatch.subject ?? lesson.subject, text: cleanPatch.text ?? lesson.homework ?? '', due: cleanPatch.due ?? lesson.homeworkDue ?? '', status: cleanPatch.status ?? 'pending', attachments: cleanPatch.attachments ?? lesson.homeworkAttachments ?? [] }]);
       }
     }
     if (lessonId) {
-      setLessons(prev => prev.map(l => String(l.id) === String(lessonId) ? { ...l, homework: patch.text ?? l.homework, homeworkDue: patch.due ?? l.homeworkDue, homeworkAttachments: patch.attachments ?? l.homeworkAttachments } : l));
+      setLessons(prev => prev.map(l => String(l.id) === String(lessonId) ? { ...l, homework: cleanPatch.text ?? l.homework, homeworkDue: cleanPatch.due ?? l.homeworkDue, homeworkAttachments: cleanPatch.attachments ?? l.homeworkAttachments } : l));
     }
     setEditHomework(null);
   }
@@ -412,6 +417,7 @@ function LocalApp() {
             monthIncome={monthIncome}
             unpaid={unpaid}
             onAdd={() => setPaymentModal(true)}
+            initialTaxRate={initialTaxRate}
           />}
         </div>
       </main>
@@ -586,13 +592,36 @@ function HomeworkPage({ homework, setHomework, students, lessons, setLessons, on
       {attachmentViewer&&<AttachmentViewer attachment={attachmentViewer} onClose={()=>setAttachmentViewer(null)} />}
   </div>;
 }
-function FinancePage({ payments, setPayments, students, lessons, onAdd }) {
+function FinancePage({ payments, setPayments, students, lessons, onAdd, initialTaxRate }) {
   const map = Object.fromEntries(students.map(s => [String(s.id), s]));
   const [periodOpen, setPeriodOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [from, setFrom] = useState(isoToday);
   const [to, setTo] = useState(isoToday);
-  const [taxRate, setTaxRate] = usePersistentState('tm_tax_rate', '0');
+  const [taxRate, setTaxRateState] = useState(() => initialTaxRate !== null && initialTaxRate !== undefined
+    ? String(initialTaxRate)
+    : (localStorage.getItem('tm_tax_rate') || '0'));
+  const setTaxRate = useCallback((next) => {
+    setTaxRateState(prev => {
+      const resolved = typeof next === 'function' ? next(prev) : next;
+      try { localStorage.setItem('tm_tax_rate', String(resolved)); } catch {}
+      if (typeof window !== 'undefined' && window.__tmSaveTaxRate) {
+        void window.__tmSaveTaxRate(resolved).catch(err => console.error('Tax sync:', err));
+      }
+      return resolved;
+    });
+  }, []);
+  useEffect(() => {
+    if (initialTaxRate !== null && initialTaxRate !== undefined) {
+      const value = String(initialTaxRate);
+      setTaxRateState(prev => {
+        if (String(prev) !== value) {
+          try { localStorage.setItem('tm_tax_rate', value); } catch {}
+        }
+        return value;
+      });
+    }
+  }, [initialTaxRate]);
 
   const weekStart = startOfWeek(new Date());
   const weekEnd = addDays(weekStart, 7);
@@ -825,7 +854,11 @@ function HomeworkModal({ students, onClose, onSave, initial, title='Новое �
   const confirmAttachmentDelete = () => {
     const target = attachmentDeleteTarget;
     if (!target) return;
-    setF(p => ({ ...p, attachments: (p.attachments || []).filter(a => a !== target && !(a.path && target.path && a.path === target.path)) }));
+    setF(p => ({
+      ...p,
+      attachments: (p.attachments || []).filter(a => a !== target && !(a.path && target.path && a.path === target.path)),
+      _deletedAttachmentPaths: target?.path ? [...(p._deletedAttachmentPaths || []), target.path] : (p._deletedAttachmentPaths || [])
+    }));
     setAttachmentDeleteTarget(null);
     setAttachmentViewer(null);
   };
@@ -951,17 +984,69 @@ async function fetchCloudData(uid) {
   const results = await Promise.all(tables.map(t => supabase.from(t).select('*').eq('user_id', uid)));
   const err = results.find(r => r.error)?.error;
   if (err) throw err;
+
   const fileRows = results[5].data || [];
   const homeworkRows = results[2].data.map(fromDbHomework);
+  const byHomework = new Map();
   for (const f of fileRows) {
-    const h = homeworkRows.find(x => String(x.id) === String(f.homework_id));
-    if (!h) continue;
-    const signed = await supabase.storage.from('homework-files').createSignedUrl(f.file_path, 3600);
-    if (signed.error) continue;
-    h.attachments = [...(h.attachments || []), { name: f.file_name, type: f.mime_type || '', url: signed.data.signedUrl, path: f.file_path, size: f.file_size || 0 }];
+    const key = String(f.homework_id);
+    const list = byHomework.get(key) || [];
+    list.push(f);
+    byHomework.set(key, list);
   }
-  const lessonRows = results[1].data.map(fromDbLesson).map(l => { const h=homeworkRows.find(x=>String(x.lessonId||'')===String(l.id)); return h ? {...l, homework:h.text, homeworkDue:h.due, homeworkAttachments:h.attachments||[]} : l; });
-  return { students: results[0].data.map(fromDbStudent), lessons: lessonRows, homework: homeworkRows, payments: results[3].data.map(fromDbPayment), taxRate: results[4].data[0]?.tax_percent ?? null };
+
+  const addStorageAttachment = async (h, f) => {
+    const path = f.file_path;
+    if (!path) return false;
+    const signed = await supabase.storage.from('homework-files').createSignedUrl(path, 3600);
+    if (signed.error || !signed.data?.signedUrl) return false;
+    h.attachments = [...(h.attachments || []), {
+      id: f.id || null,
+      name: f.file_name || String(path).split('/').pop() || 'file',
+      type: f.mime_type || f.metadata?.mimetype || '',
+      url: signed.data.signedUrl,
+      path,
+      size: Number(f.file_size || f.metadata?.size || 0)
+    }];
+    return true;
+  };
+
+  for (const h of homeworkRows) {
+    const rows = byHomework.get(String(h.id)) || [];
+    for (const f of rows) await addStorageAttachment(h, f);
+  }
+
+  // Recovery for old data where homework_files metadata was removed but the
+  // actual Storage object still exists. Objects live in uid/homeworkId/*.
+  for (const h of homeworkRows) {
+    if (h.attachments?.length) continue;
+    const { data: objects, error: listError } = await supabase
+      .storage.from('homework-files')
+      .list(`${uid}/${h.id}`, { limit: 100 });
+    if (listError || !objects?.length) continue;
+    for (const obj of objects) {
+      if (!obj?.name || obj.name.endsWith('/')) continue;
+      const path = `${uid}/${h.id}/${obj.name}`;
+      await addStorageAttachment(h, {
+        file_path: path,
+        file_name: obj.name,
+        metadata: obj.metadata || {}
+      });
+    }
+  }
+
+  const lessonRows = results[1].data.map(fromDbLesson).map(l => {
+    const h = homeworkRows.find(x => String(x.lessonId || '') === String(l.id));
+    return h ? { ...l, homework: h.text, homeworkDue: h.due, homeworkAttachments: h.attachments || [] } : l;
+  });
+
+  return {
+    students: results[0].data.map(fromDbStudent),
+    lessons: lessonRows,
+    homework: homeworkRows,
+    payments: results[3].data.map(fromDbPayment),
+    taxRate: results[4].data[0]?.tax_percent ?? null
+  };
 }
 
 async function dataUrlToBlob(dataUrl) {
@@ -972,6 +1057,8 @@ async function dataUrlToBlob(dataUrl) {
   for (let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
   return new Blob([bytes], { type: mime });
 }
+
+const pendingDeletedHomeworkFilePaths = new Set();
 
 async function pushAllCloud(uid, snapshot = null) {
   const read = (key, fallback=[]) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
@@ -1013,56 +1100,102 @@ async function pushAllCloud(uid, snapshot = null) {
   if (lessons.length) { const {error}=await supabase.from('lessons').upsert(lessons.map(l=>toDbLesson(l,uid)),{onConflict:'id'}); if(error) throw error; }
   if (homework.length) { const {error}=await supabase.from('homework').upsert(homework.map(h=>toDbHomework(h,uid)),{onConflict:'id'}); if(error) throw error; }
 
-  // Rebuild file metadata and remove Storage objects that are no longer referenced.
-  const {data:oldFileRows,error:oldFileError}=await supabase.from('homework_files').select('homework_id,file_name,file_path,mime_type,file_size').eq('user_id',uid); if(oldFileError) throw oldFileError;
-  const referencedPaths = new Set();
-  const oldFilesByHomeworkAndName = new Map();
-  for (const row of (oldFileRows || [])) {
-    const key = `${row.homework_id}::${row.file_name || ''}`;
-    const list = oldFilesByHomeworkAndName.get(key) || [];
-    list.push(row);
-    oldFilesByHomeworkAndName.set(key, list);
-  }
-  const {error:fd}=await supabase.from('homework_files').delete().eq('user_id',uid); if(fd) throw fd;
-  for (const h of homework) {
-    for (const a of (h.attachments || [])) {
-      if (a?.path && !a?.data) {
-        referencedPaths.add(a.path);
-        const fr={user_id:uid,homework_id:h.id,file_name:a.name||'file',file_path:a.path,mime_type:a.type||null,file_size:a.size||0};
-        const {error}=await supabase.from('homework_files').insert(fr); if(error) throw error;
-        continue;
-      }
+  // IMPORTANT: ordinary sync must never infer file deletion from a stale client snapshot.
+  // Existing homework_files rows are preserved. Only explicit UI deletion or deletion
+  // of the parent homework removes the corresponding Storage object.
+  const { data: existingFileRows, error: existingFileError } = await supabase
+    .from('homework_files')
+    .select('id,homework_id,file_name,file_path,mime_type,file_size')
+    .eq('user_id', uid);
+  if (existingFileError) throw existingFileError;
 
-      // Attachments loaded from localStorage intentionally have no binary data.
-      // Reuse their existing Storage path by matching the homework + filename,
-      // otherwise a later sync would treat the file as stale and delete it.
-      if (!a?.data) {
-        const key = `${h.id}::${a?.name || ''}`;
-        const candidates = oldFilesByHomeworkAndName.get(key) || [];
-        const old = candidates.shift();
-        if (old?.file_path) {
-          referencedPaths.add(old.file_path);
-          const fr={user_id:uid,homework_id:h.id,file_name:a.name||old.file_name||'file',file_path:old.file_path,mime_type:a.type||old.mime_type||null,file_size:a.size||old.file_size||0};
-          const {error}=await supabase.from('homework_files').insert(fr); if(error) throw error;
-        }
-        continue;
-      }
-      if (!String(a.data).startsWith('data:')) continue;
-      const safeName=String(a.name||'file').replace(/[^a-zA-Z0-9._-]/g,'_');
-      const path=`${uid}/${h.id}/${safeName}`; referencedPaths.add(path);
-      const blob=await dataUrlToBlob(a.data);
-      const up=await supabase.storage.from('homework-files').upload(path,blob,{upsert:true,contentType:a.type||blob.type||'application/octet-stream'}); if(up.error) throw up.error;
-      const fr={user_id:uid,homework_id:h.id,file_name:a.name||safeName,file_path:path,mime_type:a.type||blob.type||null,file_size:blob.size};
-      const {error}=await supabase.from('homework_files').insert(fr); if(error) throw error;
+  const existingByKey = new Map();
+  for (const row of (existingFileRows || [])) {
+    existingByKey.set(`${row.homework_id}::${row.file_path}`, row);
+  }
+
+  // A homework that no longer exists really was deleted through the UI, so its
+  // file metadata and Storage objects can safely be removed.
+  const currentHomeworkIds = new Set(homework.map(h => String(h.id)));
+  const deletedHomeworkFileRows = (existingFileRows || []).filter(
+    row => !currentHomeworkIds.has(String(row.homework_id))
+  );
+  for (const row of deletedHomeworkFileRows) {
+    const { error } = await supabase.from('homework_files').delete()
+      .eq('user_id', uid).eq('id', row.id);
+    if (error) throw error;
+    if (row.file_path) {
+      const { error: storageError } = await supabase.storage
+        .from('homework-files').remove([row.file_path]);
+      if (storageError) throw storageError;
     }
   }
-  const stalePaths = (oldFileRows || []).map(r=>r.file_path).filter(Boolean).filter(path=>!referencedPaths.has(path));
-  if (stalePaths.length) {
-    const {error:removeError}=await supabase.storage.from('homework-files').remove(stalePaths);
-    if (removeError) throw removeError;
+
+  for (const h of homework) {
+    for (const a of (h.attachments || [])) {
+      if (!a?.path && !a?.data) continue;
+
+      let path = a.path || null;
+      let fileName = a.name || 'file';
+      let mimeType = a.type || null;
+      let fileSize = Number(a.size || 0);
+
+      if (a?.data && String(a.data).startsWith('data:')) {
+        const safeName = String(fileName).replace(/[^a-zA-Z0-9._-]/g, '_');
+        path = `${uid}/${h.id}/${safeName}`;
+        const blob = await dataUrlToBlob(a.data);
+        const up = await supabase.storage.from('homework-files').upload(path, blob, {
+          upsert: true,
+          contentType: mimeType || blob.type || 'application/octet-stream'
+        });
+        if (up.error) throw up.error;
+        fileSize = blob.size;
+        mimeType = mimeType || blob.type || null;
+      }
+
+      if (!path) continue;
+      const key = `${h.id}::${path}`;
+      const existingRow = existingByKey.get(key);
+      const payload = {
+        user_id: uid,
+        homework_id: h.id,
+        file_name: fileName,
+        file_path: path,
+        mime_type: mimeType,
+        file_size: fileSize
+      };
+
+      if (existingRow?.id) {
+        const { error } = await supabase.from('homework_files').update(payload)
+          .eq('user_id', uid).eq('id', existingRow.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('homework_files').insert(payload);
+        if (error) throw error;
+      }
+    }
   }
+
+  // Delete only files explicitly removed from Homework > Edit.
+  if (pendingDeletedHomeworkFilePaths.size) {
+    const deletedPaths = [...pendingDeletedHomeworkFilePaths];
+    for (const path of deletedPaths) {
+      const { error } = await supabase.from('homework_files').delete()
+        .eq('user_id', uid).eq('file_path', path);
+      if (error) throw error;
+    }
+    const { error: removeError } = await supabase.storage
+      .from('homework-files').remove(deletedPaths);
+    if (removeError) throw removeError;
+    deletedPaths.forEach(path => pendingDeletedHomeworkFilePaths.delete(path));
+  }
+
   if (payments.length) { const {error}=await supabase.from('payments').upsert(payments.map(p=>toDbPayment(p,uid)),{onConflict:'id'}); if(error) throw error; }
-  const {error:se}=await supabase.from('settings').upsert({user_id:uid,tax_percent:Math.max(0,Math.min(100,taxPercent))},{onConflict:'user_id'}); if(se) throw se;
+  const hasExplicitTaxRate = !!snapshot && Object.prototype.hasOwnProperty.call(snapshot, 'taxRate');
+  if (hasExplicitTaxRate) {
+    const {error:se}=await supabase.from('settings').upsert({user_id:uid,tax_percent:Math.max(0,Math.min(100,taxPercent))},{onConflict:'user_id'});
+    if(se) throw se;
+  }
 }
 async function seedCloudFromLocal(uid) {
   const normalized = normalizeLocalDataForCloud();
@@ -1070,7 +1203,8 @@ async function seedCloudFromLocal(uid) {
   localStorage.setItem('tm_lessons', JSON.stringify(normalized.lessons));
   localStorage.setItem('tm_homework', JSON.stringify(normalized.homework));
   localStorage.setItem('tm_payments', JSON.stringify(normalized.payments));
-  await pushAllCloud(uid);
+  const taxRate = localStorage.getItem('tm_tax_rate');
+  await pushAllCloud(uid, { ...normalized, taxRate });
 }
 
 function AuthScreen({ onLogin }) {
@@ -1092,6 +1226,7 @@ function CloudApp() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [ready, setReady] = useState(false);
+  const [cloudTaxRate, setCloudTaxRate] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -1123,6 +1258,7 @@ function CloudApp() {
     window.__tmCloudPrepareUid = uid;
     window.__tmCloudPreparePromise = (async () => {
       const data = await fetchCloudData(uid);
+      setCloudTaxRate(data.taxRate);
       const empty = !data.students.length && !data.lessons.length && !data.homework.length && !data.payments.length;
 
       if (empty) {
@@ -1197,8 +1333,12 @@ function CloudApp() {
           lessons: Array.isArray(snapshot.lessons) ? snapshot.lessons : [],
           homework: Array.isArray(snapshot.homework) ? snapshot.homework : [],
           payments: Array.isArray(snapshot.payments) ? snapshot.payments : [],
-          taxRate: snapshot.taxRate !== undefined ? snapshot.taxRate : localStorage.getItem('tm_tax_rate'),
         };
+        // Tax is synced only by the dedicated tax-save path. General entity
+        // syncs must never carry an old local tax value and overwrite Supabase.
+        if (Object.prototype.hasOwnProperty.call(snapshot, 'taxRate')) {
+          queuedSnapshot.taxRate = snapshot.taxRate;
+        }
         generation += 1;
         pending = true;
         void flush();
@@ -1209,6 +1349,22 @@ function CloudApp() {
       const handlePageHide = () => { void flush(); };
       window.addEventListener('pagehide', handlePageHide);
       window.addEventListener('beforeunload', handlePageHide);
+
+      window.__tmMarkHomeworkFileDeleted = (path) => {
+        if (window.__tmCloudUserId !== uid || !path) return;
+        pendingDeletedHomeworkFilePaths.add(String(path));
+        if (window.__tmRequestCloudSync) void window.__tmRequestCloudSync();
+      };
+
+      window.__tmSaveTaxRate = async (rate) => {
+        if (window.__tmCloudUserId !== uid) return;
+        const value = Math.max(0, Math.min(100, Number(rate) || 0));
+        const { error } = await supabase.from('settings').upsert(
+          { user_id: uid, tax_percent: value },
+          { onConflict: 'user_id' }
+        );
+        if (error) throw error;
+      };
 
       window.__tmLogout = () => supabase.auth.signOut();
     })();
@@ -1226,7 +1382,7 @@ function CloudApp() {
   if (error) return <div className="auth-page"><div className="auth-card card"><h1>Tutor Manager</h1><div className="form-error">{error}</div></div></div>;
   if (!session) return <AuthScreen onLogin={() => {}} />;
   if (!ready) return <div className="auth-page"><div className="auth-card card"><h1>Tutor Manager</h1><p>Загрузка данных…</p></div></div>;
-  return <LocalApp />;
+  return <LocalApp initialTaxRate={cloudTaxRate} />;
 }
 
 createRoot(document.getElementById('root')).render(<CloudApp />);
