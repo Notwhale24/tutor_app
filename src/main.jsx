@@ -79,6 +79,9 @@ function usePersistentState(key, initial, syncCloud = true) {
       } catch (e) {
         console.warn('Не удалось записать локальный кэш:', e);
       }
+      if (key === 'tm_tax_rate' && typeof window !== 'undefined' && window.__tmRequestCloudSync) {
+        window.__tmRequestCloudSync({ taxRate: resolved });
+      }
       return resolved;
     });
   }, [key]);
@@ -980,7 +983,9 @@ async function pushAllCloud(uid, snapshot = null) {
   if (snapshot?.lessons) localStorage.setItem('tm_lessons', JSON.stringify(lessons));
   if (snapshot?.homework) localStorage.setItem('tm_homework', JSON.stringify(homework));
   if (snapshot?.payments) localStorage.setItem('tm_payments', JSON.stringify(payments));
-  const taxRaw = localStorage.getItem('tm_tax_rate');
+  const taxRaw = snapshot?.taxRate !== undefined && snapshot?.taxRate !== null
+    ? snapshot.taxRate
+    : localStorage.getItem('tm_tax_rate');
   const taxPercent = taxRaw === null || String(taxRaw).trim() === '' ? 0 : Number(taxRaw) || 0;
   const isUuid = v => typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
   if (students.some(s=>!isUuid(s.id))) throw new Error('Некорректный ID ученика. Обновите страницу и попробуйте снова.');
@@ -1009,17 +1014,40 @@ async function pushAllCloud(uid, snapshot = null) {
   if (homework.length) { const {error}=await supabase.from('homework').upsert(homework.map(h=>toDbHomework(h,uid)),{onConflict:'id'}); if(error) throw error; }
 
   // Rebuild file metadata and remove Storage objects that are no longer referenced.
-  const {data:oldFileRows,error:oldFileError}=await supabase.from('homework_files').select('file_path').eq('user_id',uid); if(oldFileError) throw oldFileError;
+  const {data:oldFileRows,error:oldFileError}=await supabase.from('homework_files').select('homework_id,file_name,file_path,mime_type,file_size').eq('user_id',uid); if(oldFileError) throw oldFileError;
   const referencedPaths = new Set();
+  const oldFilesByHomeworkAndName = new Map();
+  for (const row of (oldFileRows || [])) {
+    const key = `${row.homework_id}::${row.file_name || ''}`;
+    const list = oldFilesByHomeworkAndName.get(key) || [];
+    list.push(row);
+    oldFilesByHomeworkAndName.set(key, list);
+  }
   const {error:fd}=await supabase.from('homework_files').delete().eq('user_id',uid); if(fd) throw fd;
   for (const h of homework) {
     for (const a of (h.attachments || [])) {
       if (a?.path && !a?.data) {
-        referencedPaths.add(a.path); const fr={user_id:uid,homework_id:h.id,file_name:a.name||'file',file_path:a.path,mime_type:a.type||null,file_size:a.size||0};
+        referencedPaths.add(a.path);
+        const fr={user_id:uid,homework_id:h.id,file_name:a.name||'file',file_path:a.path,mime_type:a.type||null,file_size:a.size||0};
         const {error}=await supabase.from('homework_files').insert(fr); if(error) throw error;
         continue;
       }
-      if (!a?.data || !String(a.data).startsWith('data:')) continue;
+
+      // Attachments loaded from localStorage intentionally have no binary data.
+      // Reuse their existing Storage path by matching the homework + filename,
+      // otherwise a later sync would treat the file as stale and delete it.
+      if (!a?.data) {
+        const key = `${h.id}::${a?.name || ''}`;
+        const candidates = oldFilesByHomeworkAndName.get(key) || [];
+        const old = candidates.shift();
+        if (old?.file_path) {
+          referencedPaths.add(old.file_path);
+          const fr={user_id:uid,homework_id:h.id,file_name:a.name||old.file_name||'file',file_path:old.file_path,mime_type:a.type||old.mime_type||null,file_size:a.size||old.file_size||0};
+          const {error}=await supabase.from('homework_files').insert(fr); if(error) throw error;
+        }
+        continue;
+      }
+      if (!String(a.data).startsWith('data:')) continue;
       const safeName=String(a.name||'file').replace(/[^a-zA-Z0-9._-]/g,'_');
       const path=`${uid}/${h.id}/${safeName}`; referencedPaths.add(path);
       const blob=await dataUrlToBlob(a.data);
@@ -1169,6 +1197,7 @@ function CloudApp() {
           lessons: Array.isArray(snapshot.lessons) ? snapshot.lessons : [],
           homework: Array.isArray(snapshot.homework) ? snapshot.homework : [],
           payments: Array.isArray(snapshot.payments) ? snapshot.payments : [],
+          taxRate: snapshot.taxRate !== undefined ? snapshot.taxRate : localStorage.getItem('tm_tax_rate'),
         };
         generation += 1;
         pending = true;
