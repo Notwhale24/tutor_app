@@ -34,9 +34,9 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          VITE_APP_LOGIN_EMAIL: ${{ vars.VITE_APP_LOGIN_EMAIL }}
-          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_APP_LOGIN_EMAIL: ${{ secrets.VITE_APP_LOGIN_EMAIL }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
