@@ -175,3 +175,9 @@ button:disabled{opacity:.5;cursor:not-allowed}.section-head .primary{white-space
 .attachment-delete-confirm-card strong{display:block;font-size:15px}.attachment-delete-confirm-card>span{display:block;margin-top:6px;font-size:12px;color:#6f7888}
 .attachment-delete-confirm-card .modal-actions{margin-top:16px}
 .attachment-empty-state{padding:10px 0;text-align:center;color:#a05858;font-size:12px}
+.finance-week-picker{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.finance-week-title h2{margin:0 0 6px;font-size:17px}
+.finance-week-title span{color:#687286;font-size:13px}
+.finance-week-controls{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.finance-week-controls button:disabled{opacity:.5;cursor:default}
+@media(max-width:760px){.finance-week-picker{flex-direction:column;align-items:stretch}.finance-week-controls{justify-content:center}.finance-week-title{text-align:center}}

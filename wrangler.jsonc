@@ -1,0 +1,17 @@
+{
+  "name": "tutor-manager-app",
+  "main": "cloudflare/worker.js",
+  "compatibility_date": "2026-10-12",
+  "keep_vars": true,
+  "observability": { "enabled": true },
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/supabase", "/supabase/*"]
+  },
+  "vars": {
+    "SUPABASE_URL": "https://ofkjwbfqsmgjpvpfllsg.supabase.co",
+    "ALLOWED_ORIGINS": "https://notwhale24.github.io,https://tutor-manager-app.notwhalerus.workers.dev"
+  }
+}

@@ -594,6 +594,7 @@ function HomeworkPage({ homework, setHomework, students, lessons, setLessons, on
 }
 function FinancePage({ payments, setPayments, students, lessons, onAdd, initialTaxRate }) {
   const map = Object.fromEntries(students.map(s => [String(s.id), s]));
+  const [selectedWeek, setSelectedWeek] = useState(() => localDateKey(startOfWeek(new Date())));
   const [periodOpen, setPeriodOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [from, setFrom] = useState(isoToday);
@@ -623,8 +624,15 @@ function FinancePage({ payments, setPayments, students, lessons, onAdd, initialT
     }
   }, [initialTaxRate]);
 
-  const weekStart = startOfWeek(new Date());
+  const weekStart = new Date(selectedWeek + 'T00:00:00');
   const weekEnd = addDays(weekStart, 7);
+  const currentWeek = localDateKey(startOfWeek(new Date()));
+  const weekDateFormat = { day: 'numeric', month: 'long', year: 'numeric' };
+  const weekLabel = `${weekStart.toLocaleDateString('ru-RU', weekDateFormat)} — ${addDays(weekStart, 6).toLocaleDateString('ru-RU', weekDateFormat)}`;
+  const changeWeek = (offset) => {
+    setSelectedWeek(localDateKey(addDays(weekStart, offset * 7)));
+    setDeleteTarget(null);
+  };
   const weekPayments = payments
     .filter(p => {
       const d = new Date(p.date + 'T00:00:00');
@@ -670,9 +678,18 @@ function FinancePage({ payments, setPayments, students, lessons, onAdd, initialT
       </div>
     </section>
 
+    <section className="card section-card finance-week-picker" aria-label="Выбор недели для финансов">
+      <div className="finance-week-title"><h2>Финансы за неделю</h2><span aria-live="polite">{weekLabel}</span></div>
+      <div className="finance-week-controls">
+        <button type="button" className="ghost" aria-label="Предыдущая неделя" title="Предыдущая неделя" onClick={() => changeWeek(-1)}><ChevronLeft size={18}/></button>
+        <button type="button" className="ghost" disabled={selectedWeek === currentWeek} onClick={() => { setSelectedWeek(currentWeek); setDeleteTarget(null); }}>Текущая неделя</button>
+        <button type="button" className="ghost" aria-label="Следующая неделя" title="Следующая неделя" onClick={() => changeWeek(1)}><ChevronRight size={18}/></button>
+      </div>
+    </section>
+
     <div className="stats-grid finance-stats">
       <Stat icon={CircleDollarSign} label="Доход за неделю" value={formatMoney(weekNet)} hint={`после налога ${rate}%`} />
-      <Stat icon={Clock3} label="Не оплачено" value={formatMoney(weekUnpaid)} hint="за текущую неделю" />
+      <Stat icon={Clock3} label="Не оплачено" value={formatMoney(weekUnpaid)} hint="за выбранную неделю" />
       <Stat icon={CalendarDays} label="Занятий запланировано" value={weekRemaining} hint="на неделю" />
       <Stat icon={CircleDollarSign} label="Доход за месяц" value={formatMoney(monthNet)} hint={`после налога ${rate}%`} />
     </div>
@@ -701,7 +718,7 @@ function FinancePage({ payments, setPayments, students, lessons, onAdd, initialT
         <span className={p.status==='paid'?'success-text':'danger-text'}>{p.status==='paid'?'Оплачено':'Не оплачено'}</span>
         <button type="button" className="icon-action danger-icon finance-delete-btn" title="Удалить оплату" onClick={e=>{e.stopPropagation();requestDelete(p);}}><Trash2 size={15}/></button>
       </div>)}
-      {!weekPayments.length&&<Empty text="В текущей неделе финансовых записей пока нет"/>}
+      {!weekPayments.length&&<Empty text="В выбранной неделе финансовых записей пока нет"/>}
       {deleteTarget&&<div className="delete-confirm finance-delete-confirm">
         <strong>Удалить финансовую запись?</strong>
         <span>Запись на {formatDate(deleteTarget.date)} на сумму {formatMoney(deleteTarget.amount)} будет удалена.</span>
@@ -1230,19 +1247,60 @@ function CloudApp() {
 
   useEffect(() => {
     let active = true;
-    if (!supabase) { setError('Не настроено подключение к Supabase. Создайте .env.local и укажите VITE_SUPABASE_URL и VITE_SUPABASE_PUBLISHABLE_KEY.'); setLoading(false); return; }
-    supabase.auth.getSession().then(async ({ data, error: err }) => {
-      if (err) { setError(err.message); setLoading(false); return; }
-      if (!active) return;
-      if (data.session) { setSession(data.session); await prepareUserData(data.session.user.id); }
-      setLoading(false);
-    });
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, next) => {
+    let authTimer;
+    let loadTimer;
+    const startLoading = () => {
+      clearTimeout(loadTimer);
+      setError('');
+      setLoading(true);
+      loadTimer = setTimeout(() => {
+        if (!active) return;
+        setError('Не удалось дождаться ответа Supabase. Проверьте подключение к интернету и доступность сервера базы данных, затем повторите подключение.');
+        setLoading(false);
+      }, 45000);
+    };
+    const finishLoading = () => {
+      clearTimeout(loadTimer);
+      if (active) setLoading(false);
+    };
+    const loadSession = async (next) => {
       if (!active) return;
       setSession(next);
-      if (next) { setLoading(true); try { await prepareUserData(next.user.id); } catch (e) { setError('Не удалось загрузить облачные данные: ' + e.message); } finally { setLoading(false); } } else { setReady(false); }
+      if (!next) { setReady(false); finishLoading(); return; }
+      startLoading();
+      try {
+        await prepareUserData(next.user.id);
+        if (active) setError('');
+      } catch (e) {
+        if (active) setError('Не удалось загрузить облачные данные: ' + e.message);
+      } finally {
+        finishLoading();
+      }
+    };
+    if (!supabase) { setError('Не настроено подключение к Supabase. Создайте .env.local и укажите VITE_SUPABASE_URL и VITE_SUPABASE_PUBLISHABLE_KEY.'); setLoading(false); return; }
+    startLoading();
+    supabase.auth.getSession().then(({ data, error: err }) => {
+      if (!active) return;
+      if (err) throw err;
+      return loadSession(data.session);
+    }).catch(err => {
+      if (active) setError('Не удалось подключиться к Supabase: ' + err.message);
+      finishLoading();
     });
-    return () => { active = false; listener.subscription.unsubscribe(); };
+    const { data: listener } = supabase.auth.onAuthStateChange((event, next) => {
+      if (!active) return;
+      // Initial loading is handled by getSession. Token refreshes must not
+      // remount the app or reset the week the user is currently editing.
+      if (event === 'INITIAL_SESSION') return;
+      if (event === 'TOKEN_REFRESHED' || (next && window.__tmCloudPreparedFor === next.user.id)) {
+        setSession(next);
+        return;
+      }
+      // Start Supabase requests after the auth callback has returned.
+      clearTimeout(authTimer);
+      authTimer = setTimeout(() => { void loadSession(next); }, 0);
+    });
+    return () => { active = false; clearTimeout(authTimer); clearTimeout(loadTimer); listener.subscription.unsubscribe(); };
   }, []);
 
   async function prepareUserData(uid) {
@@ -1379,7 +1437,7 @@ function CloudApp() {
   }
 
   if (loading) return <div className="auth-page"><div className="auth-card card"><h1>Tutor Manager</h1><p>Подключение к облаку…</p></div></div>;
-  if (error) return <div className="auth-page"><div className="auth-card card"><h1>Tutor Manager</h1><div className="form-error">{error}</div></div></div>;
+  if (error) return <div className="auth-page"><div className="auth-card card"><h1>Tutor Manager</h1><div className="form-error">{error}</div><button type="button" className="primary" onClick={() => window.location.reload()}>Повторить подключение</button></div></div>;
   if (!session) return <AuthScreen onLogin={() => {}} />;
   if (!ready) return <div className="auth-page"><div className="auth-card card"><h1>Tutor Manager</h1><p>Загрузка данных…</p></div></div>;
   return <LocalApp initialTaxRate={cloudTaxRate} />;
