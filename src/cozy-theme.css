@@ -1,0 +1,94 @@
+/* The approved cozy farm theme. All data and controls remain native UI. */
+:root{--accent:#4f7246;--surface:#fffefa;--border:#e8e4d7;color:#30382b;background:#faf8f0;font-family:"Segoe UI",ui-sans-serif,system-ui,sans-serif}
+body{background:#faf8f0}
+button,input,select,textarea{font-family:inherit}
+button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #8ea874;outline-offset:3px}
+.cozy-art{display:block;overflow:hidden;pointer-events:none;user-select:none;flex-shrink:0}
+.sidebar{width:242px;padding:27px 16px 16px;background:#efefdf;color:#34452f;border-right:1px solid #e1e3cf;overflow-y:auto;overflow-x:hidden}
+.brand{gap:9px;padding:0 0 30px}
+.brand-icon{width:48px;height:48px;background:transparent;box-shadow:none;flex-shrink:0}
+.brand-icon .cozy-art{width:100%;height:100%;mix-blend-mode:multiply;border-radius:50%}
+.brand b{font-size:18px;letter-spacing:-.5px;white-space:nowrap}
+.brand span{color:#69735f;font-size:12px;margin-top:3px}
+.sidebar nav{gap:10px;position:relative;z-index:1}
+.sidebar nav button{padding:14px 15px;color:#35452e;font-size:14px;border-radius:12px;gap:13px;transition:background .16s ease,color .16s ease}
+.sidebar nav button svg{width:21px;height:21px}
+.sidebar nav button:hover{background:#e2e8d4;color:#314a29}
+.sidebar nav button.active{background:#66875a;color:#fff;box-shadow:0 4px 10px #41603912}
+.sidebar-garden{margin:auto -16px -12px;min-height:180px;max-height:310px;display:flex;align-items:flex-end;flex-shrink:1;overflow:hidden;mask-image:linear-gradient(to bottom,transparent,#000 18%)}
+.sidebar-garden .cozy-art{width:100%;height:auto;margin-bottom:-25px}
+.sidebar-footer{position:relative;margin-top:0;padding:13px 0 0;color:#5e6d53;font-size:11px;z-index:1}
+.backup-tools{gap:6px}
+.backup-btn,.backup-select{border-color:#d5dcc4;background:#f7f7e8;color:#4d6040;border-radius:8px}
+.backup-btn:hover{background:#e1e9d3;color:#344b2c}
+.backup-select{max-width:100%;width:100%;font-size:11px}
+.main{margin-left:242px}
+.topbar{height:96px;padding:0 30px;background:#faf8f0ed;border:0;backdrop-filter:blur(12px);gap:14px}
+.topbar h1{font-size:28px;font-weight:750;letter-spacing:-.8px;color:#404d32;margin-bottom:4px}
+.topbar .date{font-size:13px;color:#7b806f;text-transform:capitalize}
+.top-add-lesson{margin-left:auto;font-size:13px;box-shadow:0 4px 12px #52744420}
+.content{padding:0 30px 36px;max-width:1560px}
+.page-grid{gap:20px}
+.card{background:#fffefa;border:1px solid #e8e4d7;box-shadow:0 3px 12px #675b3d05;border-radius:17px}
+.section-card{padding:22px}
+.section-head{gap:12px;flex-wrap:wrap}
+.section-head h2{color:#303c2b;font-size:18px;letter-spacing:-.3px}
+.section-head span{color:#828675}
+.primary{background:#527448;color:#fff;border-color:#527448;border-radius:11px;padding:11px 15px;transition:background .15s ease}
+.primary:hover{background:#416138;border-color:#416138}
+.ghost{background:#fffefa;color:#536348;border-color:#dedfcf;border-radius:10px}
+.ghost:hover{background:#eff2e6;border-color:#cbd5bd}
+.primary:disabled,.ghost:disabled{cursor:default;opacity:.5}
+.icon-button{color:#647753}.icon-button:hover{background:#e9eddc}
+.welcome-garden{position:relative;isolation:isolate;min-height:200px;overflow:hidden;border-radius:18px;border:1px solid #e6e2cb;background:#faf7ee}
+.welcome-copy{position:relative;z-index:2;padding:27px 30px;max-width:57%;pointer-events:none}
+.welcome-eyebrow{font-size:9px;letter-spacing:1.5px;font-weight:700;color:#7f8b69}
+.welcome-copy h2{font-size:clamp(24px,2.5vw,38px);line-height:1.14;letter-spacing:-1px;color:#304b2a;margin:13px 0 9px}
+.welcome-copy p{font-size:14px;color:#727961;margin:0;line-height:1.6}
+.welcome-break{display:none}
+.welcome-sprout{display:block;margin:10px 0 -13px 35%;font-size:34px;line-height:1;color:#8da977;transform:rotate(-10deg)}
+.welcome-garden>.cozy-art-farm{position:absolute;right:0;top:0;width:59%;height:100%;object-fit:cover;mask-image:linear-gradient(to right,transparent,#000 16%)}
+.dashboard .stats-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.stat{padding:19px 15px;gap:11px;min-width:0;align-items:center}
+.stat-icon{background:#edf2e3;color:#678d55;border-radius:12px;width:39px;height:42px;flex-shrink:0}
+.stat:nth-child(2) .stat-icon{background:#fff0df;color:#db964f}
+.stat:nth-child(3) .stat-icon{background:#f4ecf7;color:#a27eb1}
+.stat:nth-child(4) .stat-icon{background:#fff6d7;color:#cca442}
+.stat:nth-child(5) .stat-icon{background:#eef2df;color:#839c4e}
+.stat span{color:#7c806f;font-size:11px;line-height:1.4}.stat strong{font-size:25px;color:#303b29;letter-spacing:-.7px;white-space:nowrap}.stat small{font-size:10px;color:#929681;line-height:1.4}
+.two-col{grid-template-columns:minmax(0,1.55fr) minmax(300px,1fr);align-items:start;gap:20px}
+.today-card{min-height:300px}
+.lesson-row{grid-template-columns:85px minmax(105px,1fr) minmax(80px,.7fr) auto;gap:12px;padding:19px 0;border-color:#eeeade}
+.lesson-time{font-size:12px;color:#45523a;line-height:1.6}.lesson-time small{color:#989b89}
+.lesson-person b{font-size:14px;color:#303c2b}.lesson-person span{color:#919581}
+.lesson-topic{font-size:12px;color:#858d75}.muted{color:#a5a996}
+.avatar{background:#eceddb;color:#687d50;border-radius:50%;font-size:12px}.lesson-row:nth-child(3n+1) .avatar{background:#f6e0dd;color:#b16e72}.lesson-row:nth-child(3n+2) .avatar{background:#eae0f1;color:#9070a2}.lesson-row:nth-child(3n) .avatar{background:#e1ebf4;color:#6c8eb0}
+.status,.badge{border-radius:20px;padding:7px 10px;border-color:#dce3cf;background:#f0f3e9;color:#6d7f57}
+.status-completed,.badge-completed,.schedule-status.status-completed{background:#e1efda;border-color:#d1e5c7;color:#52813e}
+.status-planned,.badge-planned,.schedule-status.status-planned{background:#fff4cc;border-color:#f5e7b5;color:#9b782d}
+.status-cancelled,.badge-cancelled,.schedule-status.status-cancelled{background:#fbe9e4;border-color:#efd4cc;color:#b16655}
+.dashboard-side{display:grid;gap:18px;min-width:0}
+.garden-homework{position:relative;margin-top:0;padding-top:23px}
+.garden-homework>.cozy-art-krosh{position:absolute;right:10px;top:-24px;width:85px;height:64px;z-index:2;mix-blend-mode:multiply;mask-image:radial-gradient(ellipse at 61% 62%,#000 45%,transparent 76%)}
+.garden-homework .section-head{padding-right:55px}
+.homework-mini{grid-template-columns:8px minmax(0,1fr) auto;padding:14px 0;gap:10px;border-color:#eeecdf}.homework-mini span{color:#818871;line-height:1.6}.homework-mini small{color:#91977f;opacity:1}
+.garden-note{position:relative;overflow:hidden;border-radius:16px;border:1px solid #e2e5cf;background:#eef0dc;min-height:134px;padding:19px 108px 17px 20px;display:flex;align-items:center}
+.garden-note>div{position:relative;z-index:1}.garden-note>div>span:first-child{font-size:10px;letter-spacing:.4px;color:#86926f}.garden-note strong{display:block;font-size:19px;line-height:1.3;color:#48613a;margin-top:7px;letter-spacing:-.3px}.note-heart{display:block;color:#c69b52;font-size:27px;line-height:1;margin-top:6px}
+.garden-note>.cozy-art-minion{position:absolute;right:0;bottom:0;width:111px;height:112px;mix-blend-mode:multiply;mask-image:radial-gradient(ellipse at 57% 58%,#000 47%,transparent 75%)}
+.empty{color:#969c85;font-size:13px}
+.table-head{background:#f4f2e9;color:#8b907d}.table-row{background:#fffefa;color:#5f6a52;border-color:#eeecdf}.table-row:hover{background:#f5f5e9}.user-cell{color:#36452d}
+.table-head,.table-row{padding-top:15px;padding-bottom:15px}
+.search{background:#fffefa;border-color:#e1e3d4;color:#929b83}.search input{background:transparent;color:#3d4d32}
+.day-head,.schedule-card{background:#fffefa;border-color:#e3e4d4;border-radius:14px}.day-head b,.day-head small{color:#8d957f}.day-head strong{color:#485a39}.day-head.today{border-color:#88a774;background:#f0f4e5}.schedule-card{box-shadow:0 2px 6px #6c6b3c04}.schedule-card b{color:#435635}.schedule-status{color:#637653}
+.form-grid input,.form-grid select,.form-grid textarea,.filters-row select,.month-picker input,.tax-input,.period-panel input{border-color:#dce0ce;border-radius:10px;background:#fffefa;color:#405036}
+.form-grid input:focus,.form-grid select:focus,.form-grid textarea:focus{border-color:#91a97c}.form-grid label{color:#7d886d}
+.modal{background:#fffef8;border:1px solid #e6e5d4;border-radius:21px}.modal-head h2{color:#455839}.modal-backdrop{background:#26391e66;backdrop-filter:blur(3px)}
+.info-card,.period-panel,.day-time-field,.tax-calculated{background:#f2f3e7;border-color:#e2e6d2;color:#748260}
+.segmented{background:#eff1e3;border-color:#e0e4ce}.segmented button{color:#84916e}.segmented button.active{background:#fffefa;color:#526b3d}
+.finance-week-title h2{color:#3e5132}.finance-week-title span{color:#7f8c6a}.success-text{color:#5a873f!important}.danger-text{color:#b06b55!important}
+.auth-page{background:#faf8f0}.auth-card{background:#fffef9;border-color:#e4e4d2;box-shadow:0 12px 50px #53683b0c}.auth-card h1{color:#425836}.auth-card:before{content:"";display:block;width:72px;height:72px;margin:0 auto;border-radius:50%;background:url('./assets/cozy-farm-art.png') 1.65% 3.15% / 2265.7% auto no-repeat}.auth-card .brand-icon{display:none}.auth-card>p{color:#879273}
+@media(min-width:1500px){.lesson-row{grid-template-columns:90px minmax(130px,1fr) minmax(100px,.8fr) auto}}
+@media(max-width:1250px){.dashboard .stats-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.two-col{grid-template-columns:1fr}.dashboard-side{grid-template-columns:minmax(0,1.4fr) minmax(240px,1fr);align-items:start}.welcome-copy h2{font-size:29px}.garden-note{height:100%;min-height:160px}.garden-homework .section-head{padding-right:50px}}
+@media(max-height:800px) and (min-width:761px){.sidebar-garden{max-height:190px;min-height:100px}.sidebar-garden .cozy-art{margin-bottom:-75px}.sidebar nav{gap:5px}.sidebar nav button{padding-top:11px;padding-bottom:11px}.brand{padding-bottom:20px}}
+@media(max-width:760px){.sidebar{width:255px}.main{margin-left:0}.topbar{height:86px;padding:0 15px;gap:8px}.topbar h1{font-size:23px}.topbar .date{font-size:11px}.top-add-lesson{padding:10px}.top-add-lesson span{display:none}.content{padding:0 14px 25px}.page-grid{gap:16px}.welcome-garden{min-height:250px}.welcome-copy{max-width:100%;padding:21px 20px}.welcome-eyebrow{font-size:8px;letter-spacing:1px}.welcome-copy h2{font-size:29px;margin:10px 0 6px}.welcome-copy p{font-size:12px;max-width:230px}.welcome-sprout{display:none}.welcome-garden>.cozy-art-farm{top:auto;bottom:0;width:100%;height:123px;mask-image:linear-gradient(to bottom,transparent,#000 17%)}.welcome-copy{padding-bottom:130px}.welcome-garden{min-height:0}.dashboard .stats-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.dashboard .stat:last-child{grid-column:1/-1}.stat{padding:15px 12px;gap:10px}.stat strong{font-size:23px}.stat span{font-size:11px}.stat small{font-size:10px}.stat-icon{width:32px;height:36px}.dashboard-side{grid-template-columns:1fr}.garden-note{min-height:125px}.section-card{padding:18px}.lesson-row{grid-template-columns:72px minmax(0,1fr);gap:9px;padding:16px 0}.lesson-row .lesson-topic{grid-column:2}.lesson-row .status{grid-column:2;justify-self:start}.lesson-person{min-width:0}.today-card{min-height:0}.garden-homework{margin-top:10px}.sidebar-garden{min-height:100px;max-height:240px}.sidebar-footer{padding-top:12px}.week-controls{gap:8px}.week-controls .current-week{padding:0 4px}.finance-week-controls{gap:6px}.finance-week-controls .ghost{font-size:12px;padding:9px 11px}.garden-note strong{font-size:20px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}

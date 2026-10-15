@@ -6,6 +6,8 @@ import {
   Users, X, Trash2, ChevronLeft, ChevronRight, ClipboardList, Download, Upload, ArrowRightLeft
 } from 'lucide-react';
 import './styles.css';
+import './cozy-theme.css';
+import cozyFarmArt from './assets/cozy-farm-art.png';
 import { supabase } from './supabaseClient';
 
 const today = new Date();
@@ -346,26 +348,28 @@ function LocalApp({ initialTaxRate = null }) {
     <div className="app-shell">
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="brand">
-          <div className="brand-icon"><GraduationCap size={22} /></div>
-          <div><b>Tutor Manager</b><span>личный кабинет</span></div>
+          <div className="brand-icon"><CozyArt scene="logo" /></div>
+          <div><b>Tutor Manager</b><span>Уютный кабинет</span></div>
         </div>
         <nav>{nav.map(([id, label, Icon]) => (
           <button key={id} className={page === id ? 'active' : ''} onClick={() => go(id)}>
             <Icon size={19} /><span>{label}</span>
           </button>
         ))}</nav>
-        <div className="sidebar-footer"><div>Версия 2.0.6 • облачные данные</div><div className="backup-tools"><button type="button" className="backup-btn" onClick={exportBackup}><Download size={14} /> Экспорт</button><select className="backup-select" defaultValue="all" onChange={e=>exportByType(e.target.value)}><option value="all">Экспортировать…</option><option value="students">Только ученики</option><option value="homework">Только ДЗ</option><option value="finance">Только финансы</option></select><label className="backup-btn"><Upload size={14} /> Импорт<input key={importInputKey} type="file" accept="application/json,.json" onChange={importBackup} /></label><button type="button" className="backup-btn" onClick={() => window.__tmLogout?.()}>Выйти</button></div></div>
+        <div className="sidebar-garden"><CozyArt scene="corgi" /></div>
+        <div className="sidebar-footer"><div>С заботой о каждом занятии</div><div className="backup-tools"><button type="button" className="backup-btn" onClick={exportBackup}><Download size={14} /> Экспорт</button><select className="backup-select" defaultValue="all" onChange={e=>exportByType(e.target.value)}><option value="all">Экспортировать…</option><option value="students">Только ученики</option><option value="homework">Только ДЗ</option><option value="finance">Только финансы</option></select><label className="backup-btn"><Upload size={14} /> Импорт<input key={importInputKey} type="file" accept="application/json,.json" onChange={importBackup} /></label><button type="button" className="backup-btn" onClick={() => window.__tmLogout?.()}>Выйти</button></div></div>
       </aside>
 
       {sidebarOpen && <div className="backdrop" onClick={() => setSidebarOpen(false)} />}
 
       <main className="main">
         <header className="topbar">
-          <button className="icon-button mobile-menu" onClick={() => setSidebarOpen(true)}><Menu size={22} /></button>
+          <button className="icon-button mobile-menu" aria-label="Открыть меню" onClick={() => setSidebarOpen(true)}><Menu size={22} /></button>
           <div>
-            <h1>{nav.find(x => x[0] === page)?.[1] || 'Главная'}</h1>
+            <h1>{page === 'dashboard' ? 'Хорошего дня! ☀️' : nav.find(x => x[0] === page)?.[1] || 'Главная'}</h1>
             <span className="date">{new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
           </div>
+          {page === 'dashboard' && <button className="primary top-add-lesson" aria-label="Добавить занятие" onClick={() => setLessonModal(true)}><Plus size={18}/><span>Добавить занятие</span></button>}
         </header>
 
         <div className="content">
@@ -435,6 +439,17 @@ function LocalApp({ initialTaxRate = null }) {
   );
 }
 
+function CozyArt({ scene, className = '' }) {
+  const crops = {
+    logo: '25 29 70 70',
+    farm: '815 94 748 230',
+    corgi: '0 490 282 425',
+    krosh: '1432 426 125 94',
+    minion: '1438 685 120 115',
+  };
+  return <svg className={`cozy-art cozy-art-${scene} ${className}`} viewBox={crops[scene]} aria-hidden="true" focusable="false"><image href={cozyFarmArt} width="1586" height="992" /></svg>;
+}
+
 function Stat({ icon: Icon, label, value, hint }) {
   return <div className="stat card"><div className="stat-icon"><Icon size={20} /></div><div><span>{label}</span><strong>{value}</strong><small>{hint}</small></div></div>;
 }
@@ -446,7 +461,11 @@ function Dashboard({ students, lessons, homework, payments, studentMap, onLesson
   const weekEnd = addDays(weekStart, 7);
   const weekUnpaid = payments.filter(p => { const d = new Date(p.date + 'T00:00:00'); return p.status === 'unpaid' && d >= weekStart && d < weekEnd; }).reduce((sum, p) => sum + Number(p.amount), 0);
 
-  return <div className="page-grid">
+  return <div className="page-grid dashboard">
+    <section className="welcome-garden" aria-label="Добро пожаловать в уютный кабинет">
+      <div className="welcome-copy"><span className="welcome-eyebrow">ВАШ МАЛЕНЬКИЙ МИР БОЛЬШИХ УСПЕХОВ</span><h2>Растим знания<br className="welcome-break"/> с заботой</h2><p>Всё для спокойного и продуктивного дня</p><span className="welcome-sprout" aria-hidden="true">❧</span></div>
+      <CozyArt scene="farm" />
+    </section>
     <div className="stats-grid">
       <Stat icon={Users} label="Активные ученики" value={students.length} hint="в базе сейчас" />
       <Stat icon={CalendarDays} label="Уроков проведено" value={lessons.filter(l => l.status === 'completed').length} hint="за всё время" />
@@ -455,14 +474,18 @@ function Dashboard({ students, lessons, homework, payments, studentMap, onLesson
       <Stat icon={CircleDollarSign} label="Доход за всё время" value={formatMoney(payments.filter(p => p.status === 'paid' && p.category !== 'Налог').reduce((sum, p) => sum + Number(p.amount), 0))} hint="по отмеченным оплатам" />
     </div>
     <div className="two-col">
-      <section className="card section-card">
+      <section className="card section-card today-card">
         <div className="section-head"><div><h2>Сегодня</h2><span>{todayLessons.length} занятия</span></div><button className="ghost" onClick={onAddLesson}><Plus size={16} /> Добавить</button></div>
         <div className="lesson-list">{todayLessons.map(l => <LessonRow key={l.id} lesson={l} student={studentMap[String(l.studentId)]} onStudent={onStudent} onUpdate={onLessonUpdate} />)}{!todayLessons.length && <Empty text="На сегодня уроков нет" />}</div>
       </section>
-      <section className="card section-card">
+      <div className="dashboard-side">
+      <section className="card section-card garden-homework">
+        <CozyArt scene="krosh" />
         <div className="section-head"><div><h2>Домашние задания</h2><span>что нужно проверить</span></div><button className="ghost" onClick={onHomework}><Plus size={16} /> Добавить</button></div>
         {pending.slice(0, 5).map(h => <div className="homework-mini" key={h.id}><div className="checkbox-dot" /><div><b>{studentMap[String(h.studentId)]?.name}</b><span>{h.subject} • {h.text || 'Задание во вложении'}</span></div><small>{h.due ? `до ${formatDate(h.due)}` : 'без срока'}</small></div>)}{!pending.length && <Empty text="Все домашки выполнены 🎉" />}
       </section>
+      <aside className="garden-note"><div><span>Понемногу, каждый день</span><strong>Маленькие шаги —<br/>большие успехи</strong><span className="note-heart" aria-hidden="true">♡</span></div><CozyArt scene="minion" /></aside>
+      </div>
     </div>
   </div>;
 }
