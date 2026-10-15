@@ -8,6 +8,8 @@ import {
 import './styles.css';
 import './cozy-theme.css';
 import cozyFarmArt from './assets/cozy-farm-art.png';
+import cozyStitchArt from './assets/cozy-stitch-art.png';
+import CorgiPlayground from './CorgiPlayground';
 import { supabase } from './supabaseClient';
 
 const today = new Date();
@@ -361,6 +363,7 @@ function LocalApp({ initialTaxRate = null }) {
       </aside>
 
       {sidebarOpen && <div className="backdrop" onClick={() => setSidebarOpen(false)} />}
+      <CorgiPlayground paused={Boolean(sidebarOpen || studentModal || editStudent || lessonModal || editLesson || homeworkModal || editHomework || paymentModal || importConfirmData)} />
 
       <main className="main">
         <header className="topbar">
@@ -440,6 +443,7 @@ function LocalApp({ initialTaxRate = null }) {
 }
 
 function CozyArt({ scene, className = '' }) {
+  if (scene === 'farm') return <svg className={`cozy-art cozy-art-farm ${className}`} viewBox="810 78 770 200" aria-hidden="true" focusable="false"><defs><clipPath id="cozy-stitch-banner"><rect x="810" y="78" width="770" height="200" /></clipPath></defs><image href={cozyStitchArt} width="1586" height="992" clipPath="url(#cozy-stitch-banner)" /></svg>;
   const crops = {
     logo: '25 29 70 70',
     farm: '815 94 748 230',

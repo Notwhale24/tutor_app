@@ -1,0 +1,9 @@
+.corgi-playground{position:fixed;inset:0;pointer-events:none;z-index:18;overflow:hidden;contain:layout style}
+.corgi-sprite{position:absolute;left:0;top:0;width:124px;height:124px;background:url('./assets/corgi-sprites.png') 0 0 / 300% 200% no-repeat;pointer-events:none;will-change:transform;filter:drop-shadow(0 4px 3px #554b3520)}
+.corgi-ball{position:absolute;left:0;top:0;width:28px;height:28px;padding:0;border:1px solid #d9692f;border-radius:50%;background:radial-gradient(circle at 32% 28%,#ffbe76,#f78b43 45%,#dc6028);box-shadow:0 3px 5px #68482930;pointer-events:auto;touch-action:none;cursor:grab;will-change:transform}
+.corgi-ball[data-dragging=true]{cursor:grabbing;box-shadow:0 5px 9px #68482944}
+.corgi-ball svg{display:block;width:100%;height:100%;pointer-events:none}.corgi-ball path{fill:none;stroke:#fff4ce;stroke-width:1.5;stroke-linecap:round}
+.corgi-hide,.corgi-restore{position:fixed;right:17px;bottom:15px;border:1px solid #dde2cd;border-radius:50%;background:#fffdf3e8;color:#6c8155;display:grid;place-items:center;padding:0;cursor:pointer;pointer-events:auto;box-shadow:0 2px 8px #4e623b0d}
+.corgi-hide{width:24px;height:24px;opacity:.65}.corgi-hide:hover{opacity:1}.corgi-restore{width:34px;height:34px;z-index:18}
+@media(max-width:760px){.corgi-sprite{width:96px;height:96px}.corgi-ball{width:28px;height:28px}.corgi-hide,.corgi-restore{right:12px;bottom:12px}}
+@media(prefers-reduced-motion:reduce){.corgi-sprite{filter:none}}
