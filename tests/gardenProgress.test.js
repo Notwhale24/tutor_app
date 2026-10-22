@@ -3,6 +3,26 @@ import assert from 'node:assert/strict';
 import { normalizeGarden, initializeGarden, rewardLessons, gardenBalance, buyDecoration, gardenStage, completesDay, lessonCoins, decorationUnlocked, decorationVisible, gardenGrowth, plantGrowth } from '../src/gardenProgress.js';
 
 const lesson = (id, status = 'completed', date = '2026-10-22') => ({ id, status, date });
+test('cancel and complete again gives neither more coins nor a second flower, even after reload', () => {
+  const day = '2026-10-23';
+  const planned = [lesson('a','planned',day),lesson('b','planned',day)];
+  const completed = planned.map(l => ({...l,status:'completed',duration:45}));
+  let garden = initializeGarden(null,planned);
+  assert.equal(completesDay(planned,completed,day,garden.celebrated),true);
+  garden = rewardLessons({...garden,celebrated:[day]},completed);
+  assert.equal(gardenBalance(garden),30);
+  const cancelled = completed.map(l => l.id === 'b' ? {...l,status:'cancelled'} : l);
+  garden = rewardLessons(garden,cancelled);
+  garden = initializeGarden(JSON.parse(JSON.stringify(garden)),cancelled);
+  assert.equal(completesDay(cancelled,completed,day,garden.celebrated),false);
+  assert.equal(rewardLessons(garden,completed),garden);
+  assert.equal(gardenBalance(garden),30);
+  // A newly added lesson can earn coins, but cannot trigger another visit today.
+  const withNew = [...completed,lesson('c','planned',day)];
+  const allDone = withNew.map(l=>({...l,status:'completed'}));
+  assert.equal(completesDay(withNew,allDone,day,garden.celebrated),false);
+  assert.equal(gardenBalance(rewardLessons(garden,allDone)),50);
+});
 test('completed lessons earn once, including after undo, deletion, reload and restoring a lesson', () => {
   let garden = rewardLessons(normalizeGarden(), [lesson(1), lesson(2, 'planned')]);
   assert.equal(gardenBalance(garden), 20);
