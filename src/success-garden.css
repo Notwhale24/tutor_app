@@ -5,4 +5,5 @@
 @media(max-width:760px){.success-garden{padding:18px}.garden-heading{align-items:flex-start;flex-direction:column}.garden-heading h2{font-size:22px}.garden-actions{width:100%}.garden-shop-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.garden-growth{grid-template-columns:1fr;gap:10px}.garden-landscape>svg{min-height:180px;object-fit:cover}.garden-stage{font-size:9px;top:8px;left:8px}.corgi-flower-message strong{font-size:15px}.corgi-flower-message p{font-size:12px}}
 @media(prefers-reduced-motion:reduce){.corgi-flower-runner,.corgi-flower-dog,.corgi-flower-visit{animation:none}.garden-growth-track>span{transition:none}}
 .corgi-flower-runner{height:124px}
+.garden-locked{font-size:10px;line-height:1.5;color:#92977e;min-height:28px}.garden-shop-item{justify-content:flex-start}.garden-shop-item strong{min-height:30px;display:flex;align-items:center}
 @media(max-width:760px){.garden-landscape>svg{min-height:0}.garden-landscape{border-radius:16px;overflow:hidden}}

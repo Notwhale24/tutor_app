@@ -12,7 +12,7 @@ import cozyStitchArt from './assets/cozy-stitch-art.png';
 import CorgiPlayground from './CorgiPlayground';
 import SuccessGarden from './SuccessGarden';
 import CorgiFlowerVisit from './CorgiFlowerVisit';
-import { normalizeGarden, rewardLessons, buyDecoration, completesDay } from './gardenProgress';
+import { initializeGarden, rewardLessons, buyDecoration, completesDay } from './gardenProgress';
 import useDailyMessages from './useDailyMessages';
 import { supabase } from './supabaseClient';
 
@@ -126,7 +126,7 @@ function LocalApp({ initialTaxRate = null, initialGarden, userId = 'local' }) {
   const [garden, setGarden] = useState(() => {
     let saved;
     try { saved = JSON.parse(localStorage.getItem(gardenKey)); } catch { /* Start a new garden. */ }
-    return rewardLessons(normalizeGarden(initialGarden ?? saved), lessons, l => l.duration || getStudentDuration(students.find(s => String(s.id) === String(l.studentId)), l.subject) || 60);
+    return initializeGarden(initialGarden ?? saved, lessons);
   });
   const [flowerVisit, setFlowerVisit] = useState(false);
   const [gardenSaveError, setGardenSaveError] = useState(false);
@@ -370,7 +370,7 @@ function LocalApp({ initialTaxRate = null, initialGarden, userId = 'local' }) {
     if (!importConfirmData) return;
     const data=importConfirmData;
     setStudents(data.students); setLessons(data.lessons); setHomework(data.homework); setPayments(data.payments);
-    if (data.garden) setGarden(rewardLessons(normalizeGarden(data.garden), data.lessons, l => l.duration || getStudentDuration(data.students.find(s => String(s.id) === String(l.studentId)), l.subject) || 60));
+    if (data.garden) setGarden(initializeGarden(data.garden, data.lessons));
     setSelectedStudent(null); setPage('dashboard'); setImportConfirmData(null); setImportMessage('Данные успешно восстановлены.');
   }
 
