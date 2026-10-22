@@ -384,7 +384,7 @@ function LocalApp({ initialTaxRate = null }) {
             payments={payments}
             studentMap={studentMap}
             onLessonUpdate={updateLesson}
-            onAddLesson={() => setLessonModal(true)}
+            onAddLesson={date => setLessonModal(date)}
             onHomework={() => setHomeworkModal(true)}
             onStudent={(id) => { setSelectedStudent(id); setPage('students'); }}
           />}
@@ -432,7 +432,7 @@ function LocalApp({ initialTaxRate = null }) {
 
       {studentModal && <StudentModal onClose={() => setStudentModal(false)} onSave={addStudent} />}
       {editStudent && <StudentModal initial={editStudent} title="Редактировать ученика" onClose={() => setEditStudent(null)} onSave={(patch) => updateStudent(editStudent.id, patch)} isEdit />}
-      {lessonModal && <LessonModal students={students} onClose={() => setLessonModal(false)} onSave={addLesson} />}
+      {lessonModal && <LessonModal students={students} initialDate={typeof lessonModal === 'string' ? lessonModal : undefined} onClose={() => setLessonModal(false)} onSave={addLesson} />}
       {importConfirmData&&<div className="delete-confirm global-confirm"><strong>Восстановить данные из файла?</strong><span>Текущие данные в приложении будут заменены данными из резервной копии.</span><div className="modal-actions"><button type="button" className="ghost" onClick={()=>setImportConfirmData(null)}>Отмена</button><button type="button" className="primary" onClick={confirmImport}>Восстановить</button></div></div>}
       {importMessage&&<div className="inline-message"><span>{importMessage}</span><button type="button" onClick={()=>setImportMessage('')}><X size={15}/></button></div>}
       {editLesson && <LessonEditModal lesson={editLesson} students={students} lessons={lessons} onClose={() => setEditLesson(null)} onSave={(patch) => { updateLesson(editLesson.id, patch); setEditLesson(null); }} onDelete={deleteLesson} />}
@@ -461,7 +461,11 @@ function Stat({ icon: Icon, label, value, hint }) {
 
 function Dashboard({ students, lessons, homework, payments, studentMap, onLessonUpdate, onAddLesson, onHomework, onStudent }) {
   const dailyMessages = useDailyMessages();
-  const todayLessons = lessons.filter(l => l.date === isoToday).sort((a, b) => a.time.localeCompare(b.time));
+  const currentDate = new Date();
+  const days = [
+    { title: 'Сегодня', date: localDateKey(currentDate), empty: 'На сегодня уроков нет' },
+    { title: 'Завтра', date: localDateKey(addDays(currentDate, 1)), empty: 'На завтра уроков нет' },
+  ];
   const pending = homework.filter(h => h.status !== 'done' && h.status !== 'archived');
   const weekStart = startOfWeek(new Date());
   const weekEnd = addDays(weekStart, 7);
@@ -479,11 +483,18 @@ function Dashboard({ students, lessons, homework, payments, studentMap, onLesson
       <Stat icon={CircleDollarSign} label="Не оплачено" value={formatMoney(weekUnpaid)} hint="за текущую неделю" />
       <Stat icon={CircleDollarSign} label="Доход за всё время" value={formatMoney(payments.filter(p => p.status === 'paid' && p.category !== 'Налог').reduce((sum, p) => sum + Number(p.amount), 0))} hint="по отмеченным оплатам" />
     </div>
-    <div className="two-col">
-      <section className="card section-card today-card">
-        <div className="section-head"><div><h2>Сегодня</h2><span>{todayLessons.length} занятия</span></div><button className="ghost" onClick={onAddLesson}><Plus size={16} /> Добавить</button></div>
-        <div className="lesson-list">{todayLessons.map(l => <LessonRow key={l.id} lesson={l} student={studentMap[String(l.studentId)]} onStudent={onStudent} onUpdate={onLessonUpdate} />)}{!todayLessons.length && <Empty text="На сегодня уроков нет" />}</div>
-      </section>
+    <div className="dashboard-sections">
+      <div className="dashboard-days">
+        {days.map(day => {
+          const dayLessons = lessons.filter(l => l.date === day.date).sort((a, b) => a.time.localeCompare(b.time));
+          const count = dayLessons.length;
+          const noun = count % 10 === 1 && count % 100 !== 11 ? 'занятие' : count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 12 || count % 100 > 14) ? 'занятия' : 'занятий';
+          return <section key={day.date} className="card section-card day-card" aria-label={`Занятия: ${day.title.toLowerCase()}`}>
+            <div className="section-head"><div><h2>{day.title}</h2><span>{count} {noun}</span></div><button className="ghost" aria-label={`Добавить занятие ${day.title.toLowerCase()}`} onClick={() => onAddLesson(day.date)}><Plus size={16} /> Добавить</button></div>
+            <div className="lesson-list">{dayLessons.map(l => <LessonRow key={l.id} lesson={l} student={studentMap[String(l.studentId)]} onStudent={onStudent} onUpdate={onLessonUpdate} />)}{!count && <Empty text={day.empty} />}</div>
+          </section>;
+        })}
+      </div>
       <div className="dashboard-side">
       <section className="card section-card garden-homework">
         <CozyArt scene="krosh" />
@@ -796,10 +807,10 @@ function StudentModal({ onClose, onSave, initial, title = 'Новый учени
   </div><div className="modal-actions"><button type="button" className="ghost" onClick={onClose}>Отмена</button><button className="primary" type="submit">{isEdit ? 'Сохранить изменения' : 'Добавить ученика'}</button></div></form></Modal>;
 }
 
-function LessonModal({ students, onClose, onSave }) {
+function LessonModal({ students, initialDate = localDateKey(new Date()), onClose, onSave }) {
   const [error,setError]=useState('');
   const ds=students[0];
-  const [f,setF]=useState({studentId:ds?.id||'',subject:ds?.subject||SUBJECTS[0],date:isoToday,time:'16:00',duration:getStudentDuration(ds,ds?.subject)||60,repeatWeekly:false,repeatDays:[],repeatUntil:localDateKey(addMonths(new Date(),1)),dayTimes:{},dayDurations:{},topic:'',status:'planned'});
+  const [f,setF]=useState({studentId:ds?.id||'',subject:ds?.subject||SUBJECTS[0],date:initialDate,time:'16:00',duration:getStudentDuration(ds,ds?.subject)||60,repeatWeekly:false,repeatDays:[],repeatUntil:localDateKey(addMonths(new Date(),1)),dayTimes:{},dayDurations:{},topic:'',status:'planned'});
   useEffect(()=>{
     const st=students.find(s=>String(s.id)===String(f.studentId));
     if(st){
