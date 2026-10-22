@@ -15,7 +15,8 @@ export const DECORATIONS = [
   { id: 'lanterns', name: 'Сказочные фонарики', cost: 85, icon: '🏮' },
   { id: 'butterflies', name: 'Бабочки', cost: 50, icon: '🦋' },
   { id: 'birdhouse', name: 'Домик для птиц', cost: 65, icon: '🐦' },
-  { id: 'fence', name: 'Белый заборчик', cost: 30, icon: '🏡' },
+  // Keep the saved id so an existing fence purchase becomes a rocking chair.
+  { id: 'fence', name: 'Кресло-качалка', cost: 30, icon: '🛋️' },
   { id: 'mushrooms', name: 'Грибная полянка', cost: 40, icon: '🍄' },
   { id: 'pond', name: 'Пруд с уточкой', cost: 60, icon: '🦆' },
   { id: 'bench', name: 'Скамейка для отдыха', cost: 80, icon: '🪑' },
