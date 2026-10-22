@@ -10,6 +10,7 @@ import './cozy-theme.css';
 import cozyFarmArt from './assets/cozy-farm-art.png';
 import cozyStitchArt from './assets/cozy-stitch-art.png';
 import CorgiPlayground from './CorgiPlayground';
+import useDailyMessages from './useDailyMessages';
 import { supabase } from './supabaseClient';
 
 const today = new Date();
@@ -459,6 +460,7 @@ function Stat({ icon: Icon, label, value, hint }) {
 }
 
 function Dashboard({ students, lessons, homework, payments, studentMap, onLessonUpdate, onAddLesson, onHomework, onStudent }) {
+  const dailyMessages = useDailyMessages();
   const todayLessons = lessons.filter(l => l.date === isoToday).sort((a, b) => a.time.localeCompare(b.time));
   const pending = homework.filter(h => h.status !== 'done' && h.status !== 'archived');
   const weekStart = startOfWeek(new Date());
@@ -467,7 +469,7 @@ function Dashboard({ students, lessons, homework, payments, studentMap, onLesson
 
   return <div className="page-grid dashboard">
     <section className="welcome-garden" aria-label="Добро пожаловать в уютный кабинет">
-      <div className="welcome-copy"><span className="welcome-eyebrow">ВАШ МАЛЕНЬКИЙ МИР БОЛЬШИХ УСПЕХОВ</span><h2>Растим знания<br className="welcome-break"/> с заботой</h2><p>Всё для спокойного и продуктивного дня</p><span className="welcome-sprout" aria-hidden="true">❧</span></div>
+      <div className="welcome-copy"><span className="welcome-eyebrow">ВАШ МАЛЕНЬКИЙ МИР БОЛЬШИХ УСПЕХОВ</span><h2>{dailyMessages.bannerTitle}</h2><p>{dailyMessages.bannerSubtitle}</p><span className="welcome-sprout" aria-hidden="true">❧</span></div>
       <CozyArt scene="farm" />
     </section>
     <div className="stats-grid">
@@ -488,7 +490,7 @@ function Dashboard({ students, lessons, homework, payments, studentMap, onLesson
         <div className="section-head"><div><h2>Домашние задания</h2><span>что нужно проверить</span></div><button className="ghost" onClick={onHomework}><Plus size={16} /> Добавить</button></div>
         {pending.slice(0, 5).map(h => <div className="homework-mini" key={h.id}><div className="checkbox-dot" /><div><b>{studentMap[String(h.studentId)]?.name}</b><span>{h.subject} • {h.text || 'Задание во вложении'}</span></div><small>{h.due ? `до ${formatDate(h.due)}` : 'без срока'}</small></div>)}{!pending.length && <Empty text="Все домашки выполнены 🎉" />}
       </section>
-      <aside className="garden-note"><div><span>Понемногу, каждый день</span><strong>Маленькие шаги —<br/>большие успехи</strong><span className="note-heart" aria-hidden="true">♡</span></div><CozyArt scene="minion" /></aside>
+      <aside className="garden-note"><div><span>{dailyMessages.noteLabel}</span><strong>{dailyMessages.noteTitle}</strong><span className="note-heart" aria-hidden="true">♡</span></div><CozyArt scene="minion" /></aside>
       </div>
     </div>
   </div>;

@@ -75,6 +75,8 @@ button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible{ou
 .garden-note{position:relative;overflow:hidden;border-radius:16px;border:1px solid #e2e5cf;background:#eef0dc;min-height:134px;padding:19px 108px 17px 20px;display:flex;align-items:center}
 .garden-note>div{position:relative;z-index:1}.garden-note>div>span:first-child{font-size:10px;letter-spacing:.4px;color:#86926f}.garden-note strong{display:block;font-size:19px;line-height:1.3;color:#48613a;margin-top:7px;letter-spacing:-.3px}.note-heart{display:block;color:#c69b52;font-size:27px;line-height:1;margin-top:6px}
 .garden-note>.cozy-art-minion{position:absolute;right:0;bottom:0;width:111px;height:112px;mix-blend-mode:multiply;mask-image:radial-gradient(ellipse at 57% 58%,#000 47%,transparent 75%)}
+.welcome-copy h2{text-wrap:balance;font-size:clamp(24px,2.25vw,34px)}
+.garden-note>div>span:first-child{display:block;line-height:1.5}
 .empty{color:#969c85;font-size:13px}
 .table-head{background:#f4f2e9;color:#8b907d}.table-row{background:#fffefa;color:#5f6a52;border-color:#eeecdf}.table-row:hover{background:#f5f5e9}.user-cell{color:#36452d}
 .table-head,.table-row{padding-top:15px;padding-bottom:15px}
