@@ -10,6 +10,9 @@ import './cozy-theme.css';
 import cozyFarmArt from './assets/cozy-farm-art.png';
 import cozyStitchArt from './assets/cozy-stitch-art.png';
 import CorgiPlayground from './CorgiPlayground';
+import SuccessGarden from './SuccessGarden';
+import CorgiFlowerVisit from './CorgiFlowerVisit';
+import { normalizeGarden, rewardLessons, buyDecoration, completesDay } from './gardenProgress';
 import useDailyMessages from './useDailyMessages';
 import { supabase } from './supabaseClient';
 
@@ -114,11 +117,29 @@ const nav = [
   ['finance', 'Финансы', CircleDollarSign],
 ];
 
-function LocalApp({ initialTaxRate = null }) {
+function LocalApp({ initialTaxRate = null, initialGarden, userId = 'local' }) {
   const [students, setStudents] = usePersistentState('tm_students', seed.students, false);
   const [lessons, setLessons] = usePersistentState('tm_lessons', seed.lessons, false);
   const [homework, setHomework] = usePersistentState('tm_homework', seed.homework, false);
   const [payments, setPayments] = usePersistentState('tm_payments', seed.payments, false);
+  const gardenKey = `tm_garden_${userId}`;
+  const [garden, setGarden] = useState(() => {
+    let saved;
+    try { saved = JSON.parse(localStorage.getItem(gardenKey)); } catch { /* Start a new garden. */ }
+    return rewardLessons(normalizeGarden(initialGarden ?? saved), lessons, l => l.duration || getStudentDuration(students.find(s => String(s.id) === String(l.studentId)), l.subject) || 60);
+  });
+  const [flowerVisit, setFlowerVisit] = useState(false);
+  const [gardenSaveError, setGardenSaveError] = useState(false);
+  const closeFlowerVisit = useCallback(() => setFlowerVisit(false), []);
+  useEffect(() => {
+    const report = event => { if (event.detail.uid === userId) setGardenSaveError(event.detail.error); };
+    window.addEventListener('tm-garden-sync', report);
+    return () => window.removeEventListener('tm-garden-sync', report);
+  }, [userId]);
+  useEffect(() => { setGarden(prev => rewardLessons(prev, lessons, l => l.duration || getStudentDuration(students.find(s => String(s.id) === String(l.studentId)), l.subject) || 60)); }, [lessons, students]);
+  useEffect(() => {
+    try { localStorage.setItem(gardenKey, JSON.stringify(garden)); } catch { /* Cloud sync still runs. */ }
+  }, [garden, gardenKey]);
   const [page, setPage] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -156,9 +177,9 @@ function LocalApp({ initialTaxRate = null }) {
   // race through localStorage. This prevents status changes/deletions from being overwritten.
   useEffect(() => {
     if (typeof window !== 'undefined' && window.__tmRequestCloudSync) {
-      window.__tmRequestCloudSync({ students, lessons, homework, payments });
+      window.__tmRequestCloudSync({ students, lessons, homework, payments, ...(initialGarden !== undefined ? { garden } : {}) });
     }
-  }, [students, lessons, homework, payments]);
+  }, [students, lessons, homework, payments, garden, initialGarden]);
 
   function addStudent(data) {
     setStudents(prev => [...prev, { ...data, id: crypto.randomUUID() }]);
@@ -200,6 +221,12 @@ function LocalApp({ initialTaxRate = null }) {
   }
 
   function updateLesson(id, patch) {
+    const day = localDateKey(new Date());
+    const updated = lessons.map(l => String(l.id) === String(id) ? { ...l, ...patch } : l);
+    if (patch.status === 'completed' && completesDay(lessons, updated, day, garden.celebrated)) {
+      setGarden(prev => ({ ...prev, celebrated: [...new Set([...prev.celebrated, day])] }));
+      setFlowerVisit(true);
+    }
     setLessons(prev => prev.map(l => String(l.id) === String(id) ? { ...l, ...patch } : l));
     setPayments(prev => prev.map(p => {
       if (String(p.lessonId) !== String(id)) return p;
@@ -291,7 +318,8 @@ function LocalApp({ initialTaxRate = null }) {
       students,
       lessons,
       homework,
-      payments
+      payments,
+      garden
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -307,7 +335,7 @@ function LocalApp({ initialTaxRate = null }) {
       students: { type: 'Ученики', exportedAt: new Date().toISOString(), students },
       homework: { type: 'Домашние задания', exportedAt: new Date().toISOString(), homework },
       finance: { type: 'Финансы', exportedAt: new Date().toISOString(), payments },
-      all: { app: 'Tutor Manager', version: '2.1.0', exportedAt: new Date().toISOString(), students, lessons, homework, payments }
+      all: { app: 'Tutor Manager', version: '2.1.0', exportedAt: new Date().toISOString(), students, lessons, homework, payments, garden }
     };
     const payload = payloadMap[type] || payloadMap.all;
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
@@ -342,6 +370,7 @@ function LocalApp({ initialTaxRate = null }) {
     if (!importConfirmData) return;
     const data=importConfirmData;
     setStudents(data.students); setLessons(data.lessons); setHomework(data.homework); setPayments(data.payments);
+    if (data.garden) setGarden(rewardLessons(normalizeGarden(data.garden), data.lessons, l => l.duration || getStudentDuration(data.students.find(s => String(s.id) === String(l.studentId)), l.subject) || 60));
     setSelectedStudent(null); setPage('dashboard'); setImportConfirmData(null); setImportMessage('Данные успешно восстановлены.');
   }
 
@@ -364,7 +393,8 @@ function LocalApp({ initialTaxRate = null }) {
       </aside>
 
       {sidebarOpen && <div className="backdrop" onClick={() => setSidebarOpen(false)} />}
-      <CorgiPlayground paused={Boolean(sidebarOpen || studentModal || editStudent || lessonModal || editLesson || homeworkModal || editHomework || paymentModal || importConfirmData)} />
+      <CorgiPlayground paused={Boolean(flowerVisit || sidebarOpen || studentModal || editStudent || lessonModal || editLesson || homeworkModal || editHomework || paymentModal || importConfirmData)} />
+      {flowerVisit && <CorgiFlowerVisit onClose={closeFlowerVisit} />}
 
       <main className="main">
         <header className="topbar">
@@ -383,6 +413,11 @@ function LocalApp({ initialTaxRate = null }) {
             homework={homework}
             payments={payments}
             studentMap={studentMap}
+            garden={garden}
+            onGardenBuy={id => setGarden(prev => buyDecoration(prev, id))}
+            onGardenToggle={id => setGarden(prev => prev.owned.includes(id) ? { ...prev, hidden: prev.hidden.includes(id) ? prev.hidden.filter(x => x !== id) : [...prev.hidden, id] } : prev)}
+            gardenCloudEnabled={initialGarden !== undefined}
+            gardenSaveError={gardenSaveError}
             onLessonUpdate={updateLesson}
             onAddLesson={date => setLessonModal(date)}
             onHomework={() => setHomeworkModal(true)}
@@ -459,7 +494,7 @@ function Stat({ icon: Icon, label, value, hint }) {
   return <div className="stat card"><div className="stat-icon"><Icon size={20} /></div><div><span>{label}</span><strong>{value}</strong><small>{hint}</small></div></div>;
 }
 
-function Dashboard({ students, lessons, homework, payments, studentMap, onLessonUpdate, onAddLesson, onHomework, onStudent }) {
+function Dashboard({ students, lessons, homework, payments, studentMap, onLessonUpdate, onAddLesson, onHomework, onStudent, garden, onGardenBuy, onGardenToggle, gardenCloudEnabled, gardenSaveError }) {
   const dailyMessages = useDailyMessages();
   const currentDate = new Date();
   const days = [
@@ -495,6 +530,7 @@ function Dashboard({ students, lessons, homework, payments, studentMap, onLesson
           </section>;
         })}
       </div>
+      <SuccessGarden garden={garden} onBuy={onGardenBuy} onToggle={onGardenToggle} cloudEnabled={gardenCloudEnabled} saveError={gardenSaveError} />
       <div className="dashboard-side">
       <section className="card section-card garden-homework">
         <CozyArt scene="krosh" />
@@ -1041,6 +1077,13 @@ async function fetchCloudData(uid) {
   const results = await Promise.all(tables.map(t => supabase.from(t).select('*').eq('user_id', uid)));
   const err = results.find(r => r.error)?.error;
   if (err) throw err;
+  let garden = results[4].data[0]?.garden_state;
+  if (!results[4].data.length) {
+    try {
+      const probe = await supabase.from('settings').select('garden_state').eq('user_id', uid).maybeSingle().abortSignal(AbortSignal.timeout(8000));
+      if (!probe.error) garden = probe.data?.garden_state ?? null;
+    } catch { /* An optional garden must not block access to the cabinet. */ }
+  }
 
   const fileRows = results[5].data || [];
   const homeworkRows = results[2].data.map(fromDbHomework);
@@ -1102,7 +1145,8 @@ async function fetchCloudData(uid) {
     lessons: lessonRows,
     homework: homeworkRows,
     payments: results[3].data.map(fromDbPayment),
-    taxRate: results[4].data[0]?.tax_percent ?? null
+    taxRate: results[4].data[0]?.tax_percent ?? null,
+    garden
   };
 }
 
@@ -1253,6 +1297,10 @@ async function pushAllCloud(uid, snapshot = null) {
     const {error:se}=await supabase.from('settings').upsert({user_id:uid,tax_percent:Math.max(0,Math.min(100,taxPercent))},{onConflict:'user_id'});
     if(se) throw se;
   }
+  if (snapshot?.garden) {
+    const { error } = await supabase.from('settings').upsert({ user_id: uid, garden_state: snapshot.garden }, { onConflict: 'user_id' });
+    if (error) throw error;
+  }
 }
 async function seedCloudFromLocal(uid) {
   const normalized = normalizeLocalDataForCloud();
@@ -1284,6 +1332,7 @@ function CloudApp() {
   const [error, setError] = useState('');
   const [ready, setReady] = useState(false);
   const [cloudTaxRate, setCloudTaxRate] = useState(null);
+  const [cloudGarden, setCloudGarden] = useState(undefined);
 
   useEffect(() => {
     let active = true;
@@ -1357,6 +1406,7 @@ function CloudApp() {
     window.__tmCloudPreparePromise = (async () => {
       const data = await fetchCloudData(uid);
       setCloudTaxRate(data.taxRate);
+      setCloudGarden(data.garden);
       const empty = !data.students.length && !data.lessons.length && !data.homework.length && !data.payments.length;
 
       if (empty) {
@@ -1393,9 +1443,11 @@ function CloudApp() {
         try {
           // Sync starts immediately. There is intentionally no debounce now.
           await pushAllCloud(uid, snapshot);
+          if (snapshot.garden) window.dispatchEvent(new CustomEvent('tm-garden-sync', { detail: { uid, error: false } }));
           if (queuedSnapshot === snapshot) queuedSnapshot = null;
         } catch (e) {
           console.error('Cloud sync:', e);
+          if (snapshot.garden) window.dispatchEvent(new CustomEvent('tm-garden-sync', { detail: { uid, error: true } }));
         } finally {
           running = false;
           // A newer snapshot arrived while the previous request was running.
@@ -1437,6 +1489,7 @@ function CloudApp() {
         if (Object.prototype.hasOwnProperty.call(snapshot, 'taxRate')) {
           queuedSnapshot.taxRate = snapshot.taxRate;
         }
+        if (snapshot.garden) queuedSnapshot.garden = snapshot.garden;
         generation += 1;
         pending = true;
         void flush();
@@ -1480,7 +1533,7 @@ function CloudApp() {
   if (error) return <div className="auth-page"><div className="auth-card card"><h1>Tutor Manager</h1><div className="form-error">{error}</div><button type="button" className="primary" onClick={() => window.location.reload()}>Повторить подключение</button></div></div>;
   if (!session) return <AuthScreen onLogin={() => {}} />;
   if (!ready) return <div className="auth-page"><div className="auth-card card"><h1>Tutor Manager</h1><p>Загрузка данных…</p></div></div>;
-  return <LocalApp initialTaxRate={cloudTaxRate} />;
+  return <LocalApp key={session.user.id} userId={session.user.id} initialTaxRate={cloudTaxRate} initialGarden={cloudGarden} />;
 }
 
 createRoot(document.getElementById('root')).render(<CloudApp />);
