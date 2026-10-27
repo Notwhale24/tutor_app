@@ -6,4 +6,8 @@
 @media(prefers-reduced-motion:reduce){.corgi-flower-runner,.corgi-flower-dog,.corgi-flower-visit{animation:none}}
 .corgi-flower-runner{height:124px}
 .garden-locked{font-size:10px;line-height:1.5;color:#92977e;min-height:28px}.garden-shop-item{justify-content:flex-start}.garden-shop-item strong{min-height:30px;display:flex;align-items:center}
+.garden-painted{overflow:hidden;border-radius:18px;background:#b9ce87;isolation:isolate}
+.garden-painted>svg{aspect-ratio:1000/465;pointer-events:none}
+.garden-item-art{display:block;width:100px;height:80px;object-fit:contain}
+.garden-stage{z-index:1}
 @media(max-width:760px){.garden-landscape>svg{min-height:0}.garden-landscape{border-radius:16px;overflow:hidden}}
