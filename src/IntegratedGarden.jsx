@@ -62,7 +62,7 @@ export default function IntegratedGarden({ garden, stageName }) {
     <svg viewBox="0 0 1760 896" role="img" aria-label={`${stageName}. ${names.length ? names.join(', ') : 'Украшений пока нет'}`}>
       <defs><radialGradient id={glowId}><stop stopColor="#ffd44b" stopOpacity=".5"/><stop offset="1" stopColor="#ffcb3c" stopOpacity="0"/></radialGradient></defs>
       {isCompleteGarden(garden) ? <Artwork name="complete" preserveAspectRatio="none"/> : <>
-      <Artwork name={visible('river') ? 'meadow-river' : 'meadow'} preserveAspectRatio="none"/>
+      <Artwork name={visible('river') ? 'meadow-river-quiet' : 'meadow-quiet'} preserveAspectRatio="none"/>
       <Plant garden={garden} id="apple" x={-10} y={15} width={470} height={450}/>
       <Plant garden={garden} id="cherry" x={445} y={95} width={440} height={395}/>
       <Plant garden={garden} id="pear" x={1320} y={70} width={440} height={450}/>

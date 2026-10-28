@@ -12,5 +12,5 @@ export function plantArtwork(garden, id) {
   const age = plantGrowth(garden, id);
   const level = gardenStage(age).level;
   const flowers = id === 'flowers' || id === 'tulips';
-  return { asset: `${id}-${level}`, scale: flowers ? [0.3, 0.55, 0.8, 1][level] : [0.15, 0.4, 0.72, 1][level], level };
+  return { asset: `${id}-${level}`, scale: flowers ? [0.5, 0.72, 0.9, 1][level] : [0.15, 0.4, 0.72, 1][level], level };
 }
