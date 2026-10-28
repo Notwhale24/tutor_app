@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Coins, Flower2, ShoppingBag, X, Check, Eye, EyeOff } from 'lucide-react';
 import { DECORATIONS, gardenBalance, gardenStage, gardenGrowth, plantGrowth, decorationVisible, decorationUnlocked } from './gardenProgress';
 import './success-garden.css';
-import GardenLandscape, { gardenAsset } from './GardenLandscape';
+import GardenLandscape, { gardenAsset } from './IntegratedGarden';
 
 export default function SuccessGarden({ garden, onBuy, onToggle, cloudEnabled, saveError }) {
   const [shop, setShop] = useState(false);
