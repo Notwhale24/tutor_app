@@ -15,6 +15,8 @@ import CorgiFlowerVisit from './CorgiFlowerVisit';
 import { initializeGarden, rewardLessons, buyDecoration, completesDay } from './gardenProgress';
 import useDailyMessages from './useDailyMessages';
 import { supabase } from './supabaseClient';
+import SchedulePage from './SchedulePage';
+import usePersonalTasks from './usePersonalTasks';
 
 const today = new Date();
 const localDateKey = (d) => { const x = new Date(d); return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`; };
@@ -118,6 +120,8 @@ const nav = [
 ];
 
 function LocalApp({ initialTaxRate = null, initialGarden, userId = 'local' }) {
+  const personalTasks = usePersonalTasks(userId);
+  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [students, setStudents] = usePersistentState('tm_students', seed.students, false);
   const [lessons, setLessons] = usePersistentState('tm_lessons', seed.lessons, false);
   const [homework, setHomework] = usePersistentState('tm_homework', seed.homework, false);
@@ -319,7 +323,8 @@ function LocalApp({ initialTaxRate = null, initialGarden, userId = 'local' }) {
       lessons,
       homework,
       payments,
-      garden
+      garden,
+      personalTasks: personalTasks.tasks
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -335,7 +340,7 @@ function LocalApp({ initialTaxRate = null, initialGarden, userId = 'local' }) {
       students: { type: 'Ученики', exportedAt: new Date().toISOString(), students },
       homework: { type: 'Домашние задания', exportedAt: new Date().toISOString(), homework },
       finance: { type: 'Финансы', exportedAt: new Date().toISOString(), payments },
-      all: { app: 'Tutor Manager', version: '2.1.0', exportedAt: new Date().toISOString(), students, lessons, homework, payments, garden }
+      all: { app: 'Tutor Manager', version: '2.1.0', exportedAt: new Date().toISOString(), students, lessons, homework, payments, garden, personalTasks: personalTasks.tasks }
     };
     const payload = payloadMap[type] || payloadMap.all;
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
@@ -369,6 +374,10 @@ function LocalApp({ initialTaxRate = null, initialGarden, userId = 'local' }) {
   function confirmImport() {
     if (!importConfirmData) return;
     const data=importConfirmData;
+    if (Object.prototype.hasOwnProperty.call(data, 'personalTasks')) {
+      const result = personalTasks.restore(data.personalTasks);
+      if (result.error) { setImportMessage(result.error); return; }
+    }
     setStudents(data.students); setLessons(data.lessons); setHomework(data.homework); setPayments(data.payments);
     if (data.garden) setGarden(initializeGarden(data.garden, data.lessons));
     setSelectedStudent(null); setPage('dashboard'); setImportConfirmData(null); setImportMessage('Данные успешно восстановлены.');
@@ -393,7 +402,7 @@ function LocalApp({ initialTaxRate = null, initialGarden, userId = 'local' }) {
       </aside>
 
       {sidebarOpen && <div className="backdrop" onClick={() => setSidebarOpen(false)} />}
-      <CorgiPlayground paused={Boolean(flowerVisit || sidebarOpen || studentModal || editStudent || lessonModal || editLesson || homeworkModal || editHomework || paymentModal || importConfirmData)} />
+      <CorgiPlayground paused={Boolean(taskDialogOpen || flowerVisit || sidebarOpen || studentModal || editStudent || lessonModal || editLesson || homeworkModal || editHomework || paymentModal || importConfirmData)} />
       {flowerVisit && <CorgiFlowerVisit onClose={closeFlowerVisit} />}
 
       <main className="main">
@@ -436,6 +445,8 @@ function LocalApp({ initialTaxRate = null, initialGarden, userId = 'local' }) {
             onEditStudent={setEditStudent}
           />}
           {page === 'schedule' && <SchedulePage
+            taskStore={personalTasks}
+            onDialogChange={setTaskDialogOpen}
             students={students}
             lessons={lessons}
             studentMap={studentMap}
@@ -584,14 +595,6 @@ function StudentsPage({ students, lessons, homework, payments, studentMap, selec
     <div className="toolbar"><div className="search"><Search size={18} /><input placeholder="Поиск ученика..." value={q} onChange={e => setQ(e.target.value)} /></div><button className="primary" onClick={onAdd}><Plus size={18} /> Добавить ученика</button></div>
     <section className="card table-card"><div className="table-head students-head"><span>Ученик</span><span>Класс</span><span>Стоимость</span></div>{filtered.map(s => { return <button className="table-row students-row" key={s.id} onClick={() => setSelectedStudent(s.id)}><div className="user-cell"><div className="avatar">{initials(s.name)}</div><div><b>{s.name}</b><small className="student-subjects">{s.secondSubject ? `${s.subject} • ${s.secondSubject}` : s.subject}</small></div></div><span>{s.grade}</span><span>{formatMoney(s.price)}</span></button>; })}{!filtered.length && <Empty text="Ничего не найдено" />}</section>
   </div>;
-}
-
-function SchedulePage({ students, lessons, studentMap, onAdd, onUpdate, onEdit }) {
-  const [week,setWeek]=useState(startOfWeek(new Date())); const [monthValue,setMonthValue]=useState(localMonthKey(new Date()));
-  const days=Array.from({length:7},(_,i)=>addDays(week,i));
-  const shift=n=>{const w=addDays(week,n);setWeek(w);setMonthValue(localMonthKey(w));};
-  const changeMonth=v=>{setMonthValue(v);const [y,m]=v.split('-').map(Number);setWeek(startOfWeek(new Date(y,m-1,1)));};
-  return <div className="page-grid"><div className="schedule-toolbar"><div className="month-picker"><label>Месяц</label><input type="month" value={monthValue} onChange={e=>changeMonth(e.target.value)}/></div><div className="week-controls"><button className="ghost week-arrow" onClick={()=>shift(-7)}><ChevronLeft size={17}/></button><button className="ghost current-week" onClick={()=>{const w=startOfWeek(new Date());setWeek(w);setMonthValue(localMonthKey(new Date()));}}>Текущая неделя</button><button className="ghost week-arrow" onClick={()=>shift(7)}><ChevronRight size={17}/></button></div><button className="primary" onClick={onAdd} disabled={!students.length}><Plus size={18}/> Новый урок</button></div>{!students.length?<section className="card section-card"><Empty text="Сначала добавьте ученика"/></section>:<div className="week-grid">{days.map(day=>{const date=localDateKey(day),items=lessons.filter(l=>l.date===date).sort((a,b)=>a.time.localeCompare(b.time)),weekend=day.getDay()===0||day.getDay()===6;return <div className={`day-column ${weekend?'weekend':''}`} key={date}><div className={`day-head ${date===isoToday?'today':''}`}><b>{day.toLocaleDateString('ru-RU',{weekday:'short'})}</b><strong>{day.getDate()}</strong><small>{day.toLocaleDateString('ru-RU',{month:'long'})}</small></div>{items.map(l=>{const d=l.duration||studentMap[String(l.studentId)]?.duration||60;return <div className="schedule-card" key={l.id} onClick={()=>onEdit(l)}><div className="schedule-time">{l.time} – {formatEndTime(l.time,d)}</div><b>{studentMap[String(l.studentId)]?.name||'Удалённый ученик'}</b><small className="schedule-subject">{l.subject||studentMap[String(l.studentId)]?.subject||'—'}</small><span>{l.topic||'Тема не указана'}</span><select className={`schedule-status status-${l.status}`} value={l.status} onClick={e=>e.stopPropagation()} onChange={e=>onUpdate(l.id,{status:e.target.value})}><option value="planned">Запланирован</option><option value="completed">Проведён</option><option value="cancelled">Отменён</option></select></div>})}</div>})}</div>}</div>;
 }
 
 function HomeworkPage({ homework, setHomework, students, lessons, setLessons, onAdd, onEdit }) {

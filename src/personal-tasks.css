@@ -1,0 +1,68 @@
+.personal-schedule{gap:14px}
+.personal-schedule .schedule-toolbar{grid-template-columns:auto 1fr auto;gap:14px}
+.schedule-add-actions{display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap}
+.schedule-add-actions button{white-space:nowrap}
+.task-add.ghost{color:#765993;background:#f2edf7;border-color:#d9cce6}
+.task-add.ghost:hover{background:#e9e0f3;border-color:#bda5d1}
+.schedule-view-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.schedule-filters{display:flex;gap:5px;padding:4px;border:1px solid #e3e4d4;background:#fffefa;border-radius:12px}
+.schedule-filters button{border:0;border-radius:8px;padding:7px 14px;background:transparent;font:inherit;font-size:12px;color:#727e66;cursor:pointer}
+.schedule-filters button[aria-pressed=true]{background:#66875a;color:#fff}
+.schedule-week-label{font-size:12px;color:#7e886f}
+.schedule-legend{display:flex;gap:16px;font-size:11px;color:#7e886f}
+.schedule-legend span{display:flex;align-items:center;gap:6px}
+.schedule-legend span::before{content:'';width:8px;height:8px;background:#a0b58c;border-radius:50%}
+.schedule-legend span:last-child::before{background:#bba1cf}
+.personal-schedule .week-grid{min-height:360px;align-items:stretch;padding-bottom:16px;grid-template-columns:repeat(7,minmax(130px,1fr));overflow-x:auto}
+.personal-schedule .day-column{min-width:0}
+.personal-schedule .day-head{margin-bottom:12px}
+.personal-task-card{position:relative;background:#f3eef8;border:1px solid #e2d7eb;border-left:3px solid #b295c8;border-radius:13px;padding:10px 10px 11px;margin-bottom:9px;color:#574467;box-shadow:0 2px 6px #66527b05}
+.personal-task-card:has(.task-menu-toggle[aria-expanded=true]){z-index:3}
+.task-card-head{display:flex;justify-content:space-between;align-items:center;gap:2px;margin-bottom:8px}
+.task-card-head>span{display:flex;align-items:center;gap:5px;font-size:10px;color:#8a6ca1;min-width:0}
+.task-menu-anchor{position:relative;flex-shrink:0}
+.task-menu-toggle{display:grid;place-items:center;width:24px;height:24px;border:0;border-radius:6px;background:transparent;color:#79628a;cursor:pointer}
+.task-menu-toggle:hover{background:#e8dff0}
+.task-card-menu{position:absolute;top:28px;right:0;width:162px;padding:5px;border:1px solid #e2d8ea;background:#fffefa;border-radius:11px;box-shadow:0 8px 25px #49325822;z-index:4}
+.task-card-menu button{display:flex;align-items:center;gap:9px;width:100%;padding:10px 8px;background:none;border:0;border-radius:7px;font:inherit;font-size:12px;text-align:left;color:#675574;cursor:pointer}
+.task-card-menu button:hover{background:#f1edf5}
+.task-card-menu .task-menu-delete{color:#af6262}
+.task-card-body{display:flex;align-items:flex-start;gap:7px;min-width:0}
+.task-complete{appearance:none;flex:0 0 17px;width:17px;height:17px;border:1.5px solid #ad96bc;border-radius:50%;background:#fffefa;margin:2px 0 0;cursor:pointer}
+.task-complete:checked{background:#8caa76;border-color:#8caa76;box-shadow:inset 0 0 0 3px #f3eef8}
+.task-card-open,.lesson-card-open{display:block;width:100%;min-width:0;border:0;padding:0;background:none;font:inherit;text-align:left;color:inherit;cursor:pointer}
+.task-card-open time{display:block;font-size:11px;white-space:nowrap;color:#796884;margin-bottom:5px}
+.task-card-open strong{display:block;font-size:13px;line-height:1.45;font-weight:650;overflow-wrap:anywhere}
+.task-card-note{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:11px;line-height:1.5;color:#94839d;margin-top:5px;overflow-wrap:anywhere}
+.task-card-meta{display:flex;align-items:center;gap:4px;color:#94839d;font-size:10px;margin:8px 0 0 24px}
+.personal-task-card.is-complete{background:#f4f1f6;border-left-color:#b7c3aa}
+.is-complete .task-card-open strong{text-decoration:line-through;color:#9b8ca4}
+.lesson-card-open>svg{color:#81966c;margin-bottom:7px}
+.personal-schedule .schedule-status{font-size:10px;padding:7px 5px}
+.day-add-task{display:flex;align-items:center;justify-content:center;gap:4px;width:100%;padding:8px 4px;margin-top:5px;background:none;border:1px dashed transparent;border-radius:10px;font:inherit;font-size:10px;color:#9b8ca7;cursor:pointer}
+.day-add-task:hover{background:#f3eef8;border-color:#ddcfe7;color:#765993}
+.day-empty-note{display:block;text-align:center;font-size:10px;color:#abb09e;padding:9px 3px}
+.task-sync-note{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:11px;line-height:1.5;color:#929b85;min-height:18px}
+.task-sync-note button{border:0;background:none;padding:0;font:inherit;text-decoration:underline;color:#80618f;cursor:pointer}
+.personal-task-dialog{width:min(530px,calc(100vw - 30px));max-height:calc(100dvh - 40px);margin:auto;padding:0;border:1px solid #e3e4d4;border-radius:21px;background:#fffefa;color:#485a39;box-shadow:0 18px 70px #32452a30;overflow-y:auto}
+.personal-task-dialog::backdrop{background:#29332369;backdrop-filter:blur(2px)}
+.task-dialog-content{padding:24px}
+.task-dialog-heading{display:flex;align-items:center;justify-content:space-between;gap:15px}
+.task-dialog-heading>div{display:flex;align-items:center;gap:10px}
+.task-dialog-heading>div>svg{color:#9a79b5}
+.task-dialog-heading h2{font-size:23px;color:#435635;margin:0;letter-spacing:-.4px}
+.task-dialog-intro{font-size:12px;color:#909780;margin:9px 0 22px;line-height:1.6;overflow-wrap:anywhere}
+.task-form{gap:16px}
+.task-form label{color:#67765a}
+.task-form input,.task-form select,.task-form textarea{background:#fcfbf6;border-color:#dfe2d1;border-radius:10px;min-width:0;width:100%;color:#435635}
+.task-form .inline-check input{width:16px;height:16px;accent-color:#9a79b5}
+.task-form input:focus,.task-form select:focus,.task-form textarea:focus{border-color:#ad91c3;box-shadow:0 0 0 3px #c7b1d61a}
+.task-optional{font-size:10px;color:#a1a792;font-weight:400}
+.task-form-hint{margin:0;font-size:11px;color:#929b85;line-height:1.6}
+.task-overlap{margin:0;padding:10px;border-radius:10px;background:#fff6dd;color:#987c35;font-size:11px;line-height:1.5}
+.task-primary.primary{background:#9b7bb5;border-color:#9b7bb5;color:#fff}
+.task-primary.primary:hover{background:#86649f;border-color:#86649f}
+.personal-task-dialog .modal-actions{flex-wrap:wrap;margin-top:22px}
+.personal-schedule button:focus-visible,.personal-task-dialog button:focus-visible,.task-complete:focus-visible{outline:2px solid #9472ae;outline-offset:3px}
+@media(max-width:1150px){.personal-schedule .schedule-toolbar{grid-template-columns:1fr auto}.personal-schedule .week-controls{grid-column:1/-1;grid-row:2;justify-content:center}.schedule-add-actions{grid-column:2;grid-row:1}.schedule-legend{display:none}}
+@media(max-width:760px){.personal-schedule .schedule-toolbar{grid-template-columns:1fr}.schedule-add-actions{grid-column:1;grid-row:2;justify-content:stretch}.schedule-add-actions button{flex:1}.personal-schedule .week-controls{grid-row:3}.schedule-week-label{font-size:11px}.personal-schedule .week-grid{grid-template-columns:repeat(7,minmax(160px,1fr))}.task-dialog-content{padding:20px}.task-dialog-heading h2{font-size:21px}.personal-task-dialog .form-grid{grid-template-columns:1fr 1fr}.personal-task-dialog .form-grid .wide{grid-column:1/-1}.task-card-menu{width:150px}}
