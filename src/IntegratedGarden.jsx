@@ -66,7 +66,7 @@ export default function IntegratedGarden({ garden, stageName }) {
       <Plant garden={garden} id="apple" x={-10} y={15} width={470} height={450}/>
       <Plant garden={garden} id="cherry" x={445} y={95} width={440} height={395}/>
       <Plant garden={garden} id="pear" x={1320} y={70} width={440} height={450}/>
-      {item('birdhouse', 390, 320, 110, 180)}
+      {item('birdhouse', 372, 265, 146, 235)}
       {item('fence', 650, 380, 180, 130)}
       {item('mushrooms', 530, 435, 90, 60)}
       {item('bench', 1510, 420, 180, 115)}
@@ -76,12 +76,12 @@ export default function IntegratedGarden({ garden, stageName }) {
       </g>}
       <Garland garden={garden} glowId={glowId}/>
       <Plant garden={garden} id="flowers" x={-5} y={535} width={385} height={205}/>
+      {item('pond', 455, 490, 550, 187)}
       {item('gnome', 392, 552, 115, 165)}
       <Plant garden={garden} id="tulips" x={455} y={610} width={285} height={190}/>
       {item('gnome-fisher', 1250, 413, 245, 165)}
       {item('bridge', 1115, 545, 580, 210, 'none')}
       {item('picnic', 15, 665, 440, 220)}
-      {item('pond', 1390, 745, 370, 160)}
       {item('butterflies', 265, 490, 210, 70)}
       </>}
     </svg>
