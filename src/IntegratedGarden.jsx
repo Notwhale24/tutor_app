@@ -56,13 +56,15 @@ function Garland({ garden, glowId }) {
 export default function IntegratedGarden({ garden, stageName }) {
   const glowId = `garden-glow-${useId().replace(/:/g, '')}`;
   const visible = id => decorationVisible(garden, id);
+  const meadow = visible('river') ? 'meadow-river-quiet' : 'meadow-quiet';
+  const landscape = visible('pond') ? `${meadow}-pond` : meadow;
   const names = DECORATIONS.filter(d => visible(d.id)).map(d => d.name);
   const item = (id, x, y, width, height, fit = 'xMidYMax meet') => visible(id) && <g data-decoration={id}><Artwork name={id} x={x} y={y} width={width} height={height} preserveAspectRatio={fit}/></g>;
   return <div className="garden-landscape garden-painted">
     <svg viewBox="0 0 1760 896" role="img" aria-label={`${stageName}. ${names.length ? names.join(', ') : 'Украшений пока нет'}`}>
       <defs><radialGradient id={glowId}><stop stopColor="#ffd44b" stopOpacity=".5"/><stop offset="1" stopColor="#ffcb3c" stopOpacity="0"/></radialGradient></defs>
       {isCompleteGarden(garden) ? <Artwork name="complete" preserveAspectRatio="none"/> : <>
-      <Artwork name={visible('river') ? 'meadow-river-quiet' : 'meadow-quiet'} preserveAspectRatio="none"/>
+      <Artwork name={landscape} preserveAspectRatio="none"/>
       <Plant garden={garden} id="apple" x={-10} y={15} width={470} height={450}/>
       <Plant garden={garden} id="cherry" x={445} y={95} width={440} height={395}/>
       <Plant garden={garden} id="pear" x={1320} y={70} width={440} height={450}/>
@@ -76,7 +78,6 @@ export default function IntegratedGarden({ garden, stageName }) {
       </g>}
       <Garland garden={garden} glowId={glowId}/>
       <Plant garden={garden} id="flowers" x={-5} y={535} width={385} height={205}/>
-      {item('pond', 455, 490, 550, 187)}
       {item('gnome', 392, 552, 115, 165)}
       <Plant garden={garden} id="tulips" x={455} y={610} width={285} height={190}/>
       {item('gnome-fisher', 1250, 413, 245, 165)}
