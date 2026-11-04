@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ArrowRightLeft, Check, ChevronLeft, ChevronRight, GraduationCap, MoreHorizontal, NotebookPen, Pencil, Plus, Repeat2, Trash2, X } from 'lucide-react';
-import { createTaskOccurrences, normalizeTask, taskDate, taskDeletionIds, tasksOverlap, validateTask } from './personalTasks.js';
+import { createTaskOccurrences, normalizeTask, taskDate, taskDeletionIds, taskRecurrenceLabel, tasksOverlap, validateTask } from './personalTasks.js';
 import './personal-tasks.css';
 
 const addDays = (value, amount) => { const next = new Date(value); next.setDate(next.getDate() + amount); return next; };
@@ -42,8 +42,8 @@ function TaskForm({ initial, mode, initialDate, lessons, tasks, onSave, onClose 
         <label className="wide">Дата<input autoFocus={mode === 'move'} type="date" required value={form.date} onChange={bind('date')}/></label>
         <label>Начало<input type="time" required value={form.time} onChange={bind('time')}/></label>
         <label>Окончание<input type="time" required value={form.endTime} onChange={bind('endTime')}/></label>
-        {!editing && <><label className="wide">Повторение<select value={form.repeat} onChange={bind('repeat')}><option value="none">Не повторять</option><option value="weekly">Каждую неделю</option></select></label>
-          {form.repeat === 'weekly' && <label className="wide">Повторять до<input type="date" min={form.date} required value={form.repeatUntil} onChange={bind('repeatUntil')}/></label>}</>}
+        {!editing && <><label className="wide">Повторение<select value={form.repeat} onChange={bind('repeat')}><option value="none">Не повторять</option><option value="weekly">Каждую неделю</option><option value="biweekly">Раз в две недели</option></select></label>
+          {form.repeat !== 'none' && <label className="wide">Повторять до<input type="date" min={form.date} required value={form.repeatUntil} onChange={bind('repeatUntil')}/></label>}</>}
         {mode !== 'move' && <><label className="wide">Заметка <span className="task-optional">необязательно</span><textarea rows={3} maxLength={4000} value={form.notes} onChange={bind('notes')} placeholder="Что взять или о чём не забыть"/></label>
           <label className="inline-check wide"><input type="checkbox" checked={form.completed} onChange={e => setForm(current => ({ ...current, completed: e.target.checked }))}/> Уже выполнено</label></>}
         {editing && form.recurrenceId && <p className="task-form-hint wide">Изменится только это дело. Остальные повторы останутся на своих датах.</p>}
@@ -86,7 +86,7 @@ function TaskCard({ task, menuOpen, setMenu, onEdit, onMove, onDelete, onToggle 
     <div className="task-card-body"><input type="checkbox" className="task-complete" checked={task.completed} onChange={() => onToggle(task)} aria-label={`${task.completed ? 'Вернуть в планы' : 'Выполнить'}: ${task.title}`}/>
       <button type="button" className="task-card-open" onClick={() => onEdit(task)} aria-label={`Изменить дело: ${task.title}`}><time>{task.time} – {task.endTime}</time><strong>{task.title}</strong>{task.notes && <span className="task-card-note">{task.notes}</span>}</button>
     </div>
-    {(task.completed || task.recurrenceId) && <div className="task-card-meta">{task.completed ? <><Check size={12}/> Выполнено</> : <><Repeat2 size={12}/> Каждую неделю</>}</div>}
+    {(task.completed || task.recurrenceId) && <div className="task-card-meta">{task.completed ? <><Check size={12}/> Выполнено</> : <><Repeat2 size={12}/> {taskRecurrenceLabel(task.recurrenceId)}</>}</div>}
   </article>;
 }
 

@@ -15,7 +15,7 @@ export function validateTask(task) {
   if (![task.time, task.endTime].every(time => /^([01]\d|2[0-3]):[0-5]\d$/.test(time || ''))) return 'Укажи время начала и окончания';
   if (taskMinutes(task.endTime) <= taskMinutes(task.time)) return 'Окончание должно быть позже начала в тот же день';
   if (String(task.notes || '').length > 4000) return 'Заметка должна быть короче 4000 символов';
-  if (task.repeat === 'weekly') {
+  if (task.repeat === 'weekly' || task.repeat === 'biweekly') {
     if (!validDate(task.repeatUntil) || task.repeatUntil < task.date) return 'Укажи дату окончания повторений не раньше первого дела';
     if ((new Date(`${task.repeatUntil}T12:00:00`) - new Date(`${task.date}T12:00:00`)) / 86400000 > 366) return 'Можно запланировать повторения максимум на год';
   }
@@ -41,13 +41,22 @@ export function createTaskOccurrences(input, uuid = () => crypto.randomUUID()) {
   const error = validateTask(input);
   if (error) throw new Error(error);
   const base = normalizeTask(input);
-  if (input.repeat !== 'weekly') return [{ ...base, id: uuid(), recurrenceId: null }];
-  const recurrenceId = uuid(), tasks = [];
+  if (input.repeat !== 'weekly' && input.repeat !== 'biweekly') return [{ ...base, id: uuid(), recurrenceId: null }];
+  const interval = input.repeat === 'biweekly' ? 14 : 7;
+  // A custom UUID v8 marks a fortnightly series in the existing series_id column.
+  // Previously saved weekly series use UUID v4.
+  const seriesId = uuid();
+  const recurrenceId = interval === 14 ? seriesId.slice(0, 14) + '8' + seriesId.slice(15) : seriesId;
+  const tasks = [];
   // Calendar arithmetic keeps local time stable across clock/DST changes.
-  for (let day = new Date(`${base.date}T12:00:00`); taskDate(day) <= input.repeatUntil; day.setDate(day.getDate() + 7)) {
+  for (let day = new Date(`${base.date}T12:00:00`); taskDate(day) <= input.repeatUntil; day.setDate(day.getDate() + interval)) {
     tasks.push({ ...base, id: uuid(), date: taskDate(day), recurrenceId, completed: tasks.length === 0 && base.completed });
   }
   return tasks;
+}
+
+export function taskRecurrenceLabel(seriesId) {
+  return seriesId?.[14] === '8' ? 'Раз в две недели' : 'Каждую неделю';
 }
 
 export function taskDeletionIds(items, task, following = false) {

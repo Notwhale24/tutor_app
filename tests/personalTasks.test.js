@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applyTaskOperation, createTaskOccurrences, normalizeTasks, reconcileTasks, taskDeletionIds, taskFromRow, taskToRow, tasksOverlap, validateTask } from '../src/personalTasks.js';
+import { applyTaskOperation, createTaskOccurrences, normalizeTasks, reconcileTasks, taskDeletionIds, taskFromRow, taskRecurrenceLabel, taskToRow, tasksOverlap, validateTask } from '../src/personalTasks.js';
 
 const task = (patch = {}) => ({ id: 'one', title: 'Йога', date: '2026-11-02', time: '18:30', endTime: '19:30', notes: '', completed: false, recurrenceId: null, ...patch });
 
@@ -18,6 +18,16 @@ test('weekly occurrences preserve local calendar time across year boundary and c
   assert.deepEqual(rows.map(t => t.completed), [true, false, false]);
   assert.equal(new Set(rows.map(t => t.id)).size, 3);
   assert.equal(new Set(rows.map(t => t.recurrenceId)).size, 1);
+});
+
+test('fortnightly repeats skip alternate weeks and retain their label after cloud reload', () => {
+  const input = task({ date: '2026-12-28', repeat: 'biweekly', repeatUntil: '2027-01-25' });
+  assert.ok(validateTask({ ...input, repeatUntil: '2026-12-27' }));
+  const rows = createTaskOccurrences(input);
+  assert.deepEqual(rows.map(t => t.date), ['2026-12-28', '2027-01-11', '2027-01-25']);
+  assert.equal(taskRecurrenceLabel(taskFromRow(taskToRow(rows[0], 'owner')).recurrenceId), 'Раз в две недели');
+  assert.deepEqual(taskDeletionIds(rows, rows[1], true), rows.slice(1).map(t => t.id));
+  assert.equal(taskRecurrenceLabel(createTaskOccurrences({ ...input, repeat: 'weekly' })[0].recurrenceId), 'Каждую неделю');
 });
 
 test('moving and completing one occurrence do not change the rest of its series', () => {
