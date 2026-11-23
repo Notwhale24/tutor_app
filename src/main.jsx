@@ -27,9 +27,9 @@ const RUB = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB',
 
 const seed = {
   students: [
-    { id: 1, name: 'Иван Петров', subject: 'Математика', secondSubject: '', grade: '8', price: 1500, priceSecond: 0, duration: 60, durationSecond: 60, parentPhone: '', phone: '', telemostLink: '', notes: 'Нужна дополнительная практика по алгебре.', active: true },
-    { id: 2, name: 'Анна Смирнова', subject: 'Русский язык', secondSubject: '', grade: '7', price: 1400, priceSecond: 0, duration: 60, durationSecond: 60, parentPhone: '', phone: '', telemostLink: '', notes: 'Работаем над грамотностью и сочинениями.', active: true },
-    { id: 3, name: 'Сергей Иванов', subject: 'Физика', secondSubject: '', grade: '10', price: 2000, priceSecond: 0, duration: 90, durationSecond: 90, parentPhone: '', phone: '', telemostLink: '', notes: 'Подготовка к контрольным и экзамену.', active: true }
+    { id: 1, name: 'Иван Петров', subject: 'Математика', secondSubject: '', grade: '8', price: 1500, priceSecond: 0, duration: 60, durationSecond: 60, parentPhone: '', phone: '', telemostLink: '', yandexBoardLink: '', notes: 'Нужна дополнительная практика по алгебре.', active: true },
+    { id: 2, name: 'Анна Смирнова', subject: 'Русский язык', secondSubject: '', grade: '7', price: 1400, priceSecond: 0, duration: 60, durationSecond: 60, parentPhone: '', phone: '', telemostLink: '', yandexBoardLink: '', notes: 'Работаем над грамотностью и сочинениями.', active: true },
+    { id: 3, name: 'Сергей Иванов', subject: 'Физика', secondSubject: '', grade: '10', price: 2000, priceSecond: 0, duration: 90, durationSecond: 90, parentPhone: '', phone: '', telemostLink: '', yandexBoardLink: '', notes: 'Подготовка к контрольным и экзамену.', active: true }
   ],
   lessons: [
     { id: 101, studentId: 1, subject: 'Математика', date: isoToday, time: '16:00', status: 'completed', topic: 'Квадратные уравнения', homework: '№ 234–240', comment: 'Нужно повторить формулу дискриминанта.' },
@@ -586,7 +586,7 @@ function StudentsPage({ students, lessons, homework, payments, studentMap, selec
       </section>
       <div className="two-col">
         <section className="card section-card"><div className="section-head"><div><h2>История занятий</h2><span>{ls.length} записей</span></div></div>{ls.map(l => <div className="history-row" key={l.id}><div className="history-date"><b>{formatDate(l.date)}</b><small>{l.time} • {l.duration || s.duration || 60} мин</small></div><div><b>{l.topic || 'Без темы'}</b><small>{l.homework ? `Д/з: ${l.homework}` : 'Без домашнего задания'}</small></div><Badge status={l.status} /></div>)}{!ls.length && <Empty text="Занятий пока нет" />}</section>
-        <section className="card section-card"><div className="section-head"><div><h2>Сводка</h2><span>по ученику</span></div></div><div className="detail-list"><div><span>Выполнено домашних заданий</span><b>{hs.filter(h => h.status === 'done').length} / {hs.length}</b></div><div><span>Получено</span><b>{formatMoney(paid)}</b></div><div><span>Долг</span><b className={debt ? 'danger-text' : ''}>{formatMoney(debt)}</b></div><div><span>Номер ученика</span><b>{s.phone || '—'}</b></div><div><span>Номер родителя</span><b>{s.parentPhone || '—'}</b></div><div><span>Ссылка на Яндекс Телемост</span>{s.telemostLink ? <a className="telemost-link" href={s.telemostLink} target="_blank" rel="noreferrer">{s.telemostLink}</a> : <b>—</b>}</div></div></section>
+        <section className="card section-card"><div className="section-head"><div><h2>Сводка</h2><span>по ученику</span></div></div><div className="detail-list"><div><span>Выполнено домашних заданий</span><b>{hs.filter(h => h.status === 'done').length} / {hs.length}</b></div><div><span>Получено</span><b>{formatMoney(paid)}</b></div><div><span>Долг</span><b className={debt ? 'danger-text' : ''}>{formatMoney(debt)}</b></div><div><span>Номер ученика</span><b>{s.phone || '—'}</b></div><div><span>Номер родителя</span><b>{s.parentPhone || '—'}</b></div><div><span>Ссылка на Яндекс Телемост</span>{s.telemostLink ? <a className="telemost-link" href={s.telemostLink} target="_blank" rel="noreferrer">{s.telemostLink}</a> : <b>—</b>}</div><div><span>Ссылка на Яндекс Доску</span>{s.yandexBoardLink ? <a className="telemost-link" href={s.yandexBoardLink} target="_blank" rel="noreferrer">{s.yandexBoardLink}</a> : <b>—</b>}</div></div></section>
       </div>
     </div>;
   }
@@ -822,8 +822,8 @@ function StudentModal({ onClose, onSave, initial, title = 'Новый учени
     name: initial.name || '', subject: initial.subject || SUBJECTS[0], secondSubject: initial.secondSubject || '',
     grade: initial.grade || '', price: initial.price ?? '', priceSecond: initial.priceSecond ?? '',
     duration: initial.duration ?? '', durationSecond: initial.durationSecond ?? '',
-    phone: initial.phone || '', parentPhone: initial.parentPhone || '', telemostLink: initial.telemostLink || '', notes: initial.notes || ''
-  } : {name:'',subject:SUBJECTS[0],secondSubject:'',grade:'',price:'',priceSecond:'',duration:'',durationSecond:'',phone:'',parentPhone:'',telemostLink:'',notes:''});
+    phone: initial.phone || '', parentPhone: initial.parentPhone || '', telemostLink: initial.telemostLink || '', yandexBoardLink: initial.yandexBoardLink || '', notes: initial.notes || ''
+  } : {name:'',subject:SUBJECTS[0],secondSubject:'',grade:'',price:'',priceSecond:'',duration:'',durationSecond:'',phone:'',parentPhone:'',telemostLink:'',yandexBoardLink:'',notes:''});
   const bind=k=>e=>setF(p=>({...p,[k]:e.target.value}));
   const submit=e=>{
     e.preventDefault();
@@ -842,6 +842,7 @@ function StudentModal({ onClose, onSave, initial, title = 'Новый учени
     <label>Номер ученика<input value={f.phone} onChange={bind('phone')}/></label>
     <label>Номер родителя<input value={f.parentPhone} onChange={bind('parentPhone')}/></label>
     <label className="wide">Ссылка на Яндекс Телемост<input type="url" value={f.telemostLink} onChange={bind('telemostLink')} placeholder="Вставьте ссылку на Телемост" /></label>
+    <label className="wide">Ссылка на Яндекс Доску<input type="url" value={f.yandexBoardLink} onChange={bind('yandexBoardLink')} placeholder="Вставьте ссылку на Яндекс Доску" /></label>
     <label className="wide">Заметки<textarea value={f.notes} onChange={bind('notes')} rows="3"/></label>
   </div><div className="modal-actions"><button type="button" className="ghost" onClick={onClose}>Отмена</button><button className="primary" type="submit">{isEdit ? 'Сохранить изменения' : 'Добавить ученика'}</button></div></form></Modal>;
 }
@@ -872,6 +873,7 @@ function LessonModal({ students, initialDate = localDateKey(new Date()), onClose
         {error&&<div className="form-error wide">{error}</div>}
         <label>Ученик<select value={f.studentId} onChange={bind('studentId')}>{students.map(s=><option value={s.id} key={s.id}>{s.name}</option>)}</select></label>
         <label className="wide">Ссылка на Яндекс Телемост<input value={students.find(s=>String(s.id)===String(f.studentId))?.telemostLink || ''} readOnly placeholder="Ссылка пока не указана" onClick={e=>{if(e.currentTarget.value) e.currentTarget.select();}} /></label>
+        <label className="wide">Ссылка на Яндекс Доску<input value={students.find(s=>String(s.id)===String(f.studentId))?.yandexBoardLink || ''} readOnly placeholder="Ссылка пока не указана" onClick={e=>{if(e.currentTarget.value) e.currentTarget.select();}} /></label>
         <label>Предмет<select value={f.subject} onChange={bind('subject')}>{(()=>{const st=students.find(s=>String(s.id)===String(f.studentId));const allowed=[st?.subject,st?.secondSubject].filter(Boolean);return (allowed.length?allowed:SUBJECTS).map(s=><option key={s}>{s}</option>);})()}</select></label>
         {!f.repeatWeekly&&<><label>Дата<input type="date" value={f.date} onChange={bind('date')}/></label><label>Время<input type="time" value={f.time} onChange={bind('time')}/></label></>}
         <label>Длительность, мин<input type="number" min="15" value={f.duration} onChange={bind('duration')}/></label>
@@ -915,6 +917,7 @@ function LessonEditModal({ lesson, students, lessons, onClose, onSave, onDelete 
         {error && <div className="form-error wide">{error}</div>}
         <label>Ученик<select value={f.studentId} disabled>{students.map(s => <option value={s.id} key={s.id}>{s.name}</option>)}</select></label>
         <label className="wide">Ссылка на Яндекс Телемост<input value={student?.telemostLink || ''} readOnly placeholder="Ссылка пока не указана" onClick={e=>{if(e.currentTarget.value) e.currentTarget.select();}} /></label>
+        <label className="wide">Ссылка на Яндекс Доску<input value={student?.yandexBoardLink || ''} readOnly placeholder="Ссылка пока не указана" onClick={e=>{if(e.currentTarget.value) e.currentTarget.select();}} /></label>
         <label>Предмет<select value={f.subject} onChange={e=>setF(prev=>({...prev,subject:e.target.value,duration:getStudentDuration(student,e.target.value)||prev.duration||60}))}>{(allowedSubjects.length ? allowedSubjects : SUBJECTS).map(s => <option value={s} key={s}>{s}</option>)}</select></label>
         <label>Дата<input type="date" value={f.date} onChange={bind('date')} autoFocus={moving} /></label>
         <label>Время<input type="time" value={f.time} onChange={bind('time')} /></label>
@@ -1066,11 +1069,11 @@ function normalizeLocalDataForCloud() {
   return { students: studentsOut, lessons: lessonsOut, homework: homeworkOut, payments: paymentsOut, studentMap };
 }
 
-function toDbStudent(s, uid) { return { id: s.id, user_id: uid, name: s.name, student_phone: s.phone || null, parent_phone: s.parentPhone || null, telemost_link: s.telemostLink || null, subject: s.subject, second_subject: s.secondSubject || null, grade: s.grade || '', price_1: Number(s.price || 0), price_2: Number(s.priceSecond || 0), duration_1: Number(s.duration || 60), duration_2: Number(s.durationSecond || 60), notes: s.notes || null }; }
+function toDbStudent(s, uid) { return { id: s.id, user_id: uid, name: s.name, student_phone: s.phone || null, parent_phone: s.parentPhone || null, telemost_link: s.telemostLink || null, yandex_board_link: s.yandexBoardLink || null, subject: s.subject, second_subject: s.secondSubject || null, grade: s.grade || '', price_1: Number(s.price || 0), price_2: Number(s.priceSecond || 0), duration_1: Number(s.duration || 60), duration_2: Number(s.durationSecond || 60), notes: s.notes || null }; }
 function toDbLesson(l, uid) { return { id: l.id, user_id: uid, student_id: l.studentId, series_id: l.recurrenceId || null, lesson_date: l.date, start_time: l.time, duration: Number(l.duration || 60), subject: l.subject, topic: l.topic || null, lesson_result: l.comment || null, next_plan: l.nextPlan || null, status: l.status === 'completed' ? 'Проведено' : l.status === 'cancelled' ? 'Отменено' : l.status === 'planned' ? 'Запланировано' : l.status === 'rescheduled' ? 'Перенесено' : l.status, repeat_enabled: false, repeat_until: null, repeat_day_of_week: null }; }
 function toDbHomework(h, uid) { return { id: h.id, user_id: uid, student_id: h.studentId, lesson_id: h.lessonId || null, subject: h.subject, text: String(h.text || ''), deadline: h.due || null, status: h.status === 'done' ? 'Выполнено' : h.status === 'not_done' ? 'Не выполнено' : h.status === 'archived' ? 'Выполнено' : 'Ожидает', archived: h.status === 'archived' }; }
 function toDbPayment(pay, uid) { return { id: pay.id, user_id: uid, student_id: pay.studentId || null, lesson_id: pay.lessonId || null, payment_date: pay.date, amount: Number(pay.amount || 0), category: pay.category || 'Урок', status: pay.status === 'paid' ? 'Оплачено' : 'Не оплачено', comment: pay.comment || null }; }
-function fromDbStudent(s) { return { id: s.id, name: s.name, phone: s.student_phone || '', parentPhone: s.parent_phone || '', telemostLink: s.telemost_link || '', subject: s.subject, secondSubject: s.second_subject || '', grade: s.grade || '', price: Number(s.price_1 || 0), priceSecond: Number(s.price_2 || 0), duration: Number(s.duration_1 || 60), durationSecond: Number(s.duration_2 || 60), notes: s.notes || '' }; }
+function fromDbStudent(s) { return { id: s.id, name: s.name, phone: s.student_phone || '', parentPhone: s.parent_phone || '', telemostLink: s.telemost_link || '', yandexBoardLink: s.yandex_board_link || '', subject: s.subject, secondSubject: s.second_subject || '', grade: s.grade || '', price: Number(s.price_1 || 0), priceSecond: Number(s.price_2 || 0), duration: Number(s.duration_1 || 60), durationSecond: Number(s.duration_2 || 60), notes: s.notes || '' }; }
 function fromDbLesson(l) { return { id: l.id, studentId: l.student_id, recurrenceId: l.series_id || null, date: l.lesson_date, time: String(l.start_time).slice(0,5), duration: Number(l.duration || 60), subject: l.subject, topic: l.topic || '', comment: l.lesson_result || '', nextPlan: l.next_plan || '', status: l.status === 'Проведено' ? 'completed' : l.status === 'Отменено' ? 'cancelled' : l.status === 'Перенесено' ? 'rescheduled' : 'planned' }; }
 function fromDbHomework(h) { return { id: h.id, studentId: h.student_id, lessonId: h.lesson_id || null, subject: h.subject, text: h.text || '', due: h.deadline || '', status: h.archived ? 'archived' : h.status === 'Выполнено' ? 'done' : h.status === 'Не выполнено' ? 'not_done' : 'pending', attachments: [] }; }
 function fromDbPayment(p) { return { id: p.id, studentId: p.student_id, lessonId: p.lesson_id, amount: Number(p.amount || 0), date: p.payment_date, status: p.status === 'Оплачено' ? 'paid' : 'unpaid', category: p.category || 'Урок', comment: p.comment || '' }; }
