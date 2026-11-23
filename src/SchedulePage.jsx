@@ -118,23 +118,7 @@ export default function SchedulePage({ students, lessons, studentMap, onAdd, onU
       return <div className={`day-column ${weekend ? 'weekend' : ''}`} key={date}>
         <div className={`day-head ${date === today ? 'today' : ''}`}><b>{day.toLocaleDateString('ru-RU', { weekday: 'short' })}</b><strong>{day.getDate()}</strong><small>{day.toLocaleDateString('ru-RU', { month: 'long' })}</small></div>
         {items.map(({ type, value }) => type === 'task' ? <TaskCard key={`task-${value.id}`} task={value} menuOpen={menuId === value.id} setMenu={setMenu} onEdit={task => open('edit', task)} onMove={task => open('move', task)} onDelete={setDeleting} onToggle={task => { const result = save([{ ...task, completed: !task.completed }]); setActionError(result?.error || ''); }}/>
-          : <article className={`schedule-card ${value.status === 'completed' ? 'is-complete' : ''}`} key={`lesson-${value.id}`}>
-            <div className="lesson-card-head"><GraduationCap size={14}/> Урок</div>
-            <div className="task-card-body">
-              <input type="checkbox" className="task-complete lesson-complete" checked={value.status === 'completed'}
-                aria-label={`${value.status === 'completed' ? 'Вернуть в планы' : 'Провести урок'}: ${studentMap[String(value.studentId)]?.name || 'Удалённый ученик'}, ${value.time}`}
-                onChange={e => onUpdate(value.id, { status: e.target.checked ? 'completed' : 'planned' })}/>
-              <button type="button" className="lesson-card-open" onClick={() => onEdit(value)} aria-label={`Изменить урок: ${studentMap[String(value.studentId)]?.name || 'Удалённый ученик'}`}>
-                <div className="schedule-time">{value.time} – {endTime(value.time, durationFor(value))}</div>
-                <b>{studentMap[String(value.studentId)]?.name || 'Удалённый ученик'}</b>
-                <small className="schedule-subject">{value.subject || studentMap[String(value.studentId)]?.subject || '—'}</small>
-                <span>{value.topic || 'Тема не указана'}</span>
-              </button>
-            </div>
-            <div className={`schedule-status status-${value.status}`}>
-              {{ planned: 'Запланирован', completed: 'Проведён', cancelled: 'Отменён', rescheduled: 'Перенесён' }[value.status] || value.status}
-            </div>
-          </article>)}
+          : <article className="schedule-card" key={`lesson-${value.id}`}><button type="button" className="lesson-card-open" onClick={() => onEdit(value)} aria-label={`Изменить урок: ${studentMap[String(value.studentId)]?.name || 'Удалённый ученик'}`}><GraduationCap size={17}/><div className="schedule-time">{value.time} – {endTime(value.time, durationFor(value))}</div><b>{studentMap[String(value.studentId)]?.name || 'Удалённый ученик'}</b><small className="schedule-subject">{value.subject || studentMap[String(value.studentId)]?.subject || '—'}</small><span>{value.topic || 'Тема не указана'}</span></button><select aria-label={`Статус урока ${value.time}`} className={`schedule-status status-${value.status}`} value={value.status} onChange={e => onUpdate(value.id, { status: e.target.value })}><option value="planned">Запланирован</option><option value="completed">Проведён</option><option value="cancelled">Отменён</option></select></article>)}
         {filter !== 'lessons' && <button type="button" className="day-add-task" aria-label={`Добавить дело ${day.toLocaleDateString('ru-RU')}`} onClick={() => open('add', null, date)}><Plus size={13}/> Добавить дело</button>}
         {!items.length && <span className="day-empty-note">{filter === 'lessons' ? 'Нет уроков' : filter === 'tasks' ? 'Нет личных дел' : 'Свободный день'}</span>}
       </div>;
