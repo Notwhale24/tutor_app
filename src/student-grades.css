@@ -1,11 +1,15 @@
-.student-grades{overflow-x:auto}
-.student-grades table{width:100%;min-height:clamp(260px,38vh,400px);border-collapse:collapse}
-.student-grades th{background:#f5f4e8;color:#617451;font-size:16px;text-align:left;padding:20px 16px;height:62px}
-.student-grades td{min-width:215px;padding:0;vertical-align:top}
+.student-grades{min-width:0;width:100%;overflow:clip}
+.student-grades table{table-layout:fixed;width:100%;min-height:clamp(300px,43vh,450px);border-collapse:collapse}
+.student-grades th{background:#f5f4e8;color:#617451;font-size:16px;text-align:center;padding:20px 4px;height:68px;overflow-wrap:anywhere}
+.student-grades td{padding:0;vertical-align:top;container-type:inline-size}
 .student-grades :is(th,td)+:is(th,td){border-left:1px solid #e8e6d8}
-.student-grade-entry{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:76px;padding:16px;border:0;border-bottom:1px solid #e8e6d8;background:none;color:inherit;text-align:left;font:inherit;cursor:pointer}
+.student-grade-entry{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:84px;padding:16px min(6%,16px);border:0;border-bottom:1px solid #e8e6d8;background:none;color:inherit;text-align:left;font:inherit;cursor:pointer;overflow-wrap:anywhere}
 .student-grade-entry:hover{background:#f6f6ec}
 .student-grade-entry .user-cell{min-width:0;overflow-wrap:anywhere}
 .student-grade-entry .user-cell b{font-size:15px}
-.student-grade-prices{display:grid;gap:4px;text-align:right;font-size:14px;font-weight:600;color:#617451;white-space:nowrap}
+.student-grade-prices{display:grid;gap:4px;min-width:0;text-align:right;font-size:14px;font-weight:600;color:#617451}
 .student-grade-prices small{display:block;font-weight:400}
+@container (max-width:140px){
+  .student-grade-entry .avatar{display:none}
+  .student-grade-prices{text-align:left}
+}
