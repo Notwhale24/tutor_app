@@ -1,0 +1,10 @@
+.student-grades{overflow-x:auto}
+.student-grades table{width:100%;border-collapse:collapse}
+.student-grades th{background:#f5f4e8;color:#617451;font-size:13px;text-align:left;padding:14px}
+.student-grades td{min-width:215px;padding:0;vertical-align:top}
+.student-grades :is(th,td)+:is(th,td){border-left:1px solid #e8e6d8}
+.student-grade-entry{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:12px;border:0;border-bottom:1px solid #e8e6d8;background:none;color:inherit;text-align:left;font:inherit;cursor:pointer}
+.student-grade-entry:hover{background:#f6f6ec}
+.student-grade-entry .user-cell{min-width:0;overflow-wrap:anywhere}
+.student-grade-prices{display:grid;gap:4px;text-align:right;font-size:12px;font-weight:600;color:#617451;white-space:nowrap}
+.student-grade-prices small{display:block;font-weight:400}

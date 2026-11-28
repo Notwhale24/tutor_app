@@ -16,7 +16,7 @@ import { initializeGarden, rewardLessons, buyDecoration, completesDay } from './
 import useDailyMessages from './useDailyMessages';
 import { supabase } from './supabaseClient';
 import SchedulePage from './SchedulePage';
-import usePersonalTasks from './usePersonalTasks';
+import './student-grades.css';
 
 const today = new Date();
 const localDateKey = (d) => { const x = new Date(d); return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`; };
@@ -113,19 +113,17 @@ function usePersistentState(key, initial, syncCloud = true) {
 
 const nav = [
   ['dashboard', 'Главная', LayoutDashboard],
-  ['students', 'Ученики', Users],
   ['schedule', 'Расписание', CalendarDays],
-  ['homework', 'Домашние задания', ClipboardList],
   ['finance', 'Финансы', CircleDollarSign],
+  ['students', 'Ученики', Users],
+  ['homework', 'Домашние задания', ClipboardList],
 ];
 
 function LocalApp({ initialTaxRate = null, initialGarden, userId = 'local' }) {
-  const personalTasks = usePersonalTasks(userId);
-  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [students, setStudents] = usePersistentState('tm_students', seed.students, false);
   const [lessons, setLessons] = usePersistentState('tm_lessons', seed.lessons, false);
   const [homework, setHomework] = usePersistentState('tm_homework', seed.homework, false);
-  const [payments, setPayments] = usePersistentState('tm_payments', seed.payments, false);
+  const [storedPayments, setStoredPayments] = usePersistentState('tm_payments', seed.payments, false);
   const gardenKey = `tm_garden_${userId}`;
   const [garden, setGarden] = useState(() => {
     let saved;
@@ -174,6 +172,19 @@ function LocalApp({ initialTaxRate = null, initialGarden, userId = 'local' }) {
   }, []);
 
   const studentMap = useMemo(() => Object.fromEntries(students.map(s => [String(s.id), s])), [students]);
+  const lessonMap = useMemo(() => new Map(lessons.map(lesson => [String(lesson.id), lesson])), [lessons]);
+  const pricePayments = useCallback(records => records.map(payment => {
+    if (payment.status !== 'unpaid' || !payment.lessonId || (payment.category && payment.category !== 'Урок')) return payment;
+    const lesson = lessonMap.get(String(payment.lessonId));
+    const student = lesson && studentMap[String(lesson.studentId)];
+    if (!student) return payment;
+    const amount = getStudentPrice(student, lesson.subject);
+    return amount === payment.amount ? payment : { ...payment, amount };
+  }), [lessonMap, studentMap]);
+  const payments = useMemo(() => pricePayments(storedPayments), [pricePayments, storedPayments]);
+  const setPayments = useCallback(update => {
+    setStoredPayments(previous => typeof update === 'function' ? update(pricePayments(previous)) : update);
+  }, [pricePayments, setStoredPayments]);
   const unpaid = payments.filter(p => p.status === 'unpaid').reduce((sum, p) => sum + Number(p.amount), 0);
   const monthIncome = payments.filter(p => p.status === 'paid' && p.category !== 'Налог').reduce((sum, p) => sum + Number(p.amount), 0);
 
@@ -238,7 +249,6 @@ function LocalApp({ initialTaxRate = null, initialGarden, userId = 'local' }) {
       const updatedStudentId = patch.studentId ?? next.studentId;
       next.studentId = updatedStudentId;
       next.subject = patch.subject ?? next.subject;
-      next.amount = getStudentPrice(studentMap[String(updatedStudentId)], next.subject) || next.amount;
       next.date = patch.date ?? next.date;
       return next;
     }));
@@ -323,8 +333,7 @@ function LocalApp({ initialTaxRate = null, initialGarden, userId = 'local' }) {
       lessons,
       homework,
       payments,
-      garden,
-      personalTasks: personalTasks.tasks
+      garden
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -340,7 +349,7 @@ function LocalApp({ initialTaxRate = null, initialGarden, userId = 'local' }) {
       students: { type: 'Ученики', exportedAt: new Date().toISOString(), students },
       homework: { type: 'Домашние задания', exportedAt: new Date().toISOString(), homework },
       finance: { type: 'Финансы', exportedAt: new Date().toISOString(), payments },
-      all: { app: 'Tutor Manager', version: '2.1.0', exportedAt: new Date().toISOString(), students, lessons, homework, payments, garden, personalTasks: personalTasks.tasks }
+      all: { app: 'Tutor Manager', version: '2.1.0', exportedAt: new Date().toISOString(), students, lessons, homework, payments, garden }
     };
     const payload = payloadMap[type] || payloadMap.all;
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
@@ -374,10 +383,6 @@ function LocalApp({ initialTaxRate = null, initialGarden, userId = 'local' }) {
   function confirmImport() {
     if (!importConfirmData) return;
     const data=importConfirmData;
-    if (Object.prototype.hasOwnProperty.call(data, 'personalTasks')) {
-      const result = personalTasks.restore(data.personalTasks);
-      if (result.error) { setImportMessage(result.error); return; }
-    }
     setStudents(data.students); setLessons(data.lessons); setHomework(data.homework); setPayments(data.payments);
     if (data.garden) setGarden(initializeGarden(data.garden, data.lessons));
     setSelectedStudent(null); setPage('dashboard'); setImportConfirmData(null); setImportMessage('Данные успешно восстановлены.');
@@ -402,7 +407,7 @@ function LocalApp({ initialTaxRate = null, initialGarden, userId = 'local' }) {
       </aside>
 
       {sidebarOpen && <div className="backdrop" onClick={() => setSidebarOpen(false)} />}
-      <CorgiPlayground paused={Boolean(taskDialogOpen || flowerVisit || sidebarOpen || studentModal || editStudent || lessonModal || editLesson || homeworkModal || editHomework || paymentModal || importConfirmData)} />
+      <CorgiPlayground paused={Boolean(flowerVisit || sidebarOpen || studentModal || editStudent || lessonModal || editLesson || homeworkModal || editHomework || paymentModal || importConfirmData)} />
       {flowerVisit && <CorgiFlowerVisit onClose={closeFlowerVisit} />}
 
       <main className="main">
@@ -445,8 +450,6 @@ function LocalApp({ initialTaxRate = null, initialGarden, userId = 'local' }) {
             onEditStudent={setEditStudent}
           />}
           {page === 'schedule' && <SchedulePage
-            taskStore={personalTasks}
-            onDialogChange={setTaskDialogOpen}
             students={students}
             lessons={lessons}
             studentMap={studentMap}
@@ -591,9 +594,33 @@ function StudentsPage({ students, lessons, homework, payments, studentMap, selec
     </div>;
   }
 
+  const byGrade = new Map();
+  for (const student of filtered) {
+    const grade = String(student.grade ?? '').trim();
+    if (!byGrade.has(grade)) byGrade.set(grade, []);
+    byGrade.get(grade).push(student);
+  }
+  const grades = [...byGrade].sort(([a], [b]) => {
+    if (!a || !b) return Number(!a) - Number(!b);
+    return a.localeCompare(b, 'ru', { numeric: true });
+  });
+
   return <div className="page-grid">
     <div className="toolbar"><div className="search"><Search size={18} /><input placeholder="Поиск ученика..." value={q} onChange={e => setQ(e.target.value)} /></div><button className="primary" onClick={onAdd}><Plus size={18} /> Добавить ученика</button></div>
-    <section className="card table-card"><div className="table-head students-head"><span>Ученик</span><span>Класс</span><span>Стоимость</span></div>{filtered.map(s => { return <button className="table-row students-row" key={s.id} onClick={() => setSelectedStudent(s.id)}><div className="user-cell"><div className="avatar">{initials(s.name)}</div><div><b>{s.name}</b><small className="student-subjects">{s.secondSubject ? `${s.subject} • ${s.secondSubject}` : s.subject}</small></div></div><span>{s.grade}</span><span>{formatMoney(s.price)}</span></button>; })}{!filtered.length && <Empty text="Ничего не найдено" />}</section>
+    <section className="card table-card student-grades" aria-label="Ученики по классам">
+      {filtered.length ? <table>
+        <thead><tr>{grades.map(([grade]) => <th key={grade} scope="col">{grade ? (/^\d+$/.test(grade) ? `${grade} класс` : grade) : 'Без класса'}</th>)}</tr></thead>
+        <tbody><tr>{grades.map(([grade, group]) => <td key={grade}>{group.map(student => (
+          <button type="button" className="student-grade-entry" key={student.id} onClick={() => setSelectedStudent(student.id)}>
+            <span className="user-cell"><span className="avatar">{initials(student.name)}</span><b>{student.name}</b></span>
+            <span className="student-grade-prices">
+              <span>{student.secondSubject && <small>{student.subject}</small>}{formatMoney(student.price)}</span>
+              {student.secondSubject && <span><small>{student.secondSubject}</small>{formatMoney(student.priceSecond)}</span>}
+            </span>
+          </button>
+        ))}</td>)}</tr></tbody>
+      </table> : <Empty text="Ничего не найдено" />}
+    </section>
   </div>;
 }
 

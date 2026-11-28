@@ -1,0 +1,14 @@
+.lesson-schedule{gap:14px}
+.lesson-schedule .schedule-toolbar{grid-template-columns:auto 1fr auto;gap:14px}
+.schedule-add-actions{display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap}
+.schedule-add-actions button{white-space:nowrap}
+.schedule-week-label{font-size:12px;color:#7e886f}
+.lesson-schedule .week-grid{min-height:360px;align-items:stretch;padding-bottom:16px;grid-template-columns:repeat(7,minmax(130px,1fr));overflow-x:auto}
+.lesson-schedule .day-column{min-width:0}
+.lesson-schedule .day-head{margin-bottom:12px}
+.lesson-card-open>svg{color:#81966c;margin-bottom:7px}
+.lesson-schedule .schedule-status{font-size:10px;padding:7px 5px}
+.day-empty-note{display:block;text-align:center;font-size:10px;color:#abb09e;padding:9px 3px}
+.lesson-card-open{display:block;width:100%;min-width:0;border:0;padding:0;background:none;font:inherit;text-align:left;color:inherit;cursor:pointer}
+@media(max-width:1150px){.lesson-schedule .schedule-toolbar{grid-template-columns:1fr auto}.lesson-schedule .week-controls{grid-column:1/-1;grid-row:2;justify-content:center}.schedule-add-actions{grid-column:2;grid-row:1}}
+@media(max-width:760px){.lesson-schedule .schedule-toolbar{grid-template-columns:1fr}.schedule-add-actions{grid-column:1;grid-row:2;justify-content:stretch}.schedule-add-actions button{flex:1}.lesson-schedule .week-controls{grid-row:3}.lesson-schedule .week-grid{grid-template-columns:repeat(7,minmax(160px,1fr))}}
